@@ -16,6 +16,12 @@ Unified MyData platform UI — dashboard, marketplace, and invitations.
 ## Run locally
 
 ```bash
+./scripts/run.sh
+```
+
+Or manually:
+
+```bash
 cp .env.example .env.local
 # AUTH_SECRET: openssl rand -base64 32
 
