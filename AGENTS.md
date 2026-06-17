@@ -6,6 +6,7 @@ Unified platform UI: login, dashboard, marketplace, invitations.
 
 | Agent | When to use |
 |-------|-------------|
+| **frontend-developer** | **Primary** — all UI implementation, components, pages, BFF routes |
 | **architect** | Cross-product boundaries, new platform features |
 | **planner** | Break work into tasks before coding |
 | **testing-agent** | After implementation; run tests |

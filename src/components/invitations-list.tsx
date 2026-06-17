@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { dashboardAppUrl } from "@/lib/product-embed";
 import { useState } from "react";
 import { ROLE_LABELS } from "@/lib/roles";
 
@@ -17,15 +17,16 @@ export function InvitationsList({ invites: initial }: { invites: Invitation[] })
   const [invites, setInvites] = useState(initial);
   const [message, setMessage] = useState("");
 
-  async function accept(id: string, name: string) {
+  async function accept(id: string, name: string, instituteId: string) {
     const res = await fetch(`/api/invitations/${id}/accept`, {
       method: "POST",
       credentials: "include",
     });
     if (res.ok) {
       setInvites((prev) => prev.filter((i) => i.id !== id));
-      setMessage(`You joined ${name}. Subscribe to Education in the marketplace to launch it.`);
+      setMessage(`You joined ${name}.`);
       router.refresh();
+      router.push(dashboardAppUrl("education", `/institutes/${instituteId}`));
     }
   }
 
@@ -41,10 +42,7 @@ export function InvitationsList({ invites: initial }: { invites: Invitation[] })
     <div className="space-y-4">
       {message && (
         <p className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-          {message}{" "}
-          <Link href="/marketplace" className="text-primary hover:underline">
-            Go to marketplace
-          </Link>
+          {message}
         </p>
       )}
       {invites.map((inv) => (
@@ -61,7 +59,7 @@ export function InvitationsList({ invites: initial }: { invites: Invitation[] })
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => accept(inv.id, inv.instituteName)}
+              onClick={() => accept(inv.id, inv.instituteName, inv.instituteId)}
               className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground"
             >
               Accept

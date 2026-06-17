@@ -5,11 +5,12 @@ import type { Product } from "@/lib/api";
 type Props = {
   product: Product;
   onAction?: () => void;
+  onLaunch?: () => void;
   actionLabel?: string;
   disabled?: boolean;
 };
 
-export function ProductCard({ product, onAction, actionLabel, disabled }: Props) {
+export function ProductCard({ product, onAction, onLaunch, actionLabel, disabled }: Props) {
   const Icon = productIcon(product.slug);
   const label = actionLabel ?? (product.subscribed ? "Launch" : "Subscribe");
 
@@ -37,12 +38,22 @@ export function ProductCard({ product, onAction, actionLabel, disabled }: Props)
       </p>
 
       {product.subscribed ? (
-        <Link
-          href={product.launchUrl}
-          className="mt-5 block w-full cursor-pointer rounded-lg bg-primary py-2.5 text-center text-sm font-medium text-primary-foreground transition hover:opacity-90"
-        >
-          {label}
-        </Link>
+        onLaunch ? (
+          <button
+            type="button"
+            onClick={onLaunch}
+            className="mt-5 w-full cursor-pointer rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+          >
+            {label}
+          </button>
+        ) : (
+          <Link
+            href={product.launchUrl}
+            className="mt-5 block w-full cursor-pointer rounded-lg bg-primary py-2.5 text-center text-sm font-medium text-primary-foreground transition hover:opacity-90"
+          >
+            {label}
+          </Link>
+        )
       ) : (
         <button
           type="button"

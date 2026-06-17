@@ -1,41 +1,28 @@
 import { auth } from "@/auth";
 import { ShellNav } from "@/components/shell-nav";
 import { InvitationsList } from "@/components/invitations-list";
+import { fetchPendingInvitations } from "@/lib/invitations";
 import { redirect } from "next/navigation";
-
-const API = process.env.EDUCATION_API_URL || "http://localhost:8010";
 
 export default async function InvitationsPage() {
   const session = await auth();
   if (!session?.accessToken) redirect("/login");
 
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${session.accessToken}`,
-  };
-  if (session.user?.email) {
-    headers["X-User-Email"] = session.user.email;
-  }
-
-  let invites = [];
-  const res = await fetch(`${API}/v1/users/me/invitations`, {
-    headers,
-    cache: "no-store",
-  });
-  if (res.ok) {
-    invites = await res.json();
-  }
+  const invites = await fetchPendingInvitations(session);
 
   return (
     <>
       <ShellNav />
-      <main className="mx-auto max-w-2xl px-6 py-10">
-        <h1 className="text-2xl font-semibold">Institute invitations</h1>
+      <main className="mx-auto max-w-2xl flex-1 px-6 py-10">
+        <h1 className="text-2xl font-semibold tracking-tight">Institute invitations</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Signed in as {session.user?.email}. Accept an invitation to join an institute.
+          Signed in as {session.user?.email}. You can also manage invitations from
+          the notifications bell in the header.
         </p>
         {invites.length === 0 ? (
-          <p className="mt-8 rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-            No pending invitations. Ask your institute admin to invite this email address.
+          <p className="mt-8 rounded-2xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground shadow-sm">
+            No pending invitations. Ask your institute admin to invite this email
+            address.
           </p>
         ) : (
           <div className="mt-8">
