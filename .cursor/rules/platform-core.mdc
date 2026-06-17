@@ -1,0 +1,26 @@
+---
+description: Core platform architecture constraints for platform-frontend
+alwaysApply: true
+---
+
+# MyData Platform Core
+
+## Architecture rules
+
+1. **Central auth only** — Keycloak SSO via NextAuth; never implement custom login.
+2. **Product isolation** — This repo is the platform shell only; no Education/Social business logic.
+3. **BFF pattern** — Browser calls `/api/*` routes; server proxies to **platform-backend** (8002).
+4. **Subscriptions gate access** — Dashboard shows only subscribed products.
+
+## Before coding
+
+- Read `docs/architecture.md` and `docs/api.md` in this repo.
+- Product UIs live in separate repos (`education-frontend`, `social-frontend`).
+
+## Related repos
+
+| Repo | Role |
+|------|------|
+| platform-backend | Identity profile, catalog, subscriptions API |
+| education-frontend | Education product UI |
+| social-frontend | Social product UI |
