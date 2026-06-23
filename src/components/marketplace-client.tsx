@@ -2,8 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ProductCard } from "@/components/product-card";
+import { ProductCard, ProductCardSkeleton } from "@/components/product-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Product } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
   { slug: "", name: "All" },
@@ -86,13 +90,12 @@ export function MarketplaceClient() {
 
   return (
     <div>
-      <div className="sticky top-14 z-40 -mx-6 border-b border-border bg-background/95 px-6 py-4 backdrop-blur">
-        <input
+      <div className="sticky top-16 z-30 -mx-6 border-b border-border bg-background/95 px-6 py-4 backdrop-blur-md">
+        <Input
           type="search"
           placeholder="Search products..."
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm outline-none transition focus:border-primary/50 focus:ring-2 focus:ring-primary/20"
         />
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {CATEGORIES.map((c) => (
@@ -100,13 +103,17 @@ export function MarketplaceClient() {
               key={c.slug}
               type="button"
               onClick={() => setCategory(c.slug)}
-              className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium transition ${
-                category === c.slug
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:text-foreground"
-              }`}
+              className={cn("shrink-0 transition", category !== c.slug && "opacity-80 hover:opacity-100")}
             >
-              {c.name}
+              <Badge
+                variant={category === c.slug ? "default" : "secondary"}
+                className={cn(
+                  "cursor-pointer px-3 py-1",
+                  category === c.slug && "bg-primary text-primary-foreground"
+                )}
+              >
+                {c.name}
+              </Badge>
             </button>
           ))}
         </div>
@@ -119,29 +126,27 @@ export function MarketplaceClient() {
       )}
 
       <p className="mt-6 text-sm text-muted-foreground">
-        {total} products {loading && "· loading..."}
+        {total} products {loading && products.length > 0 && "· loading..."}
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {products.map((p) => (
-          <ProductCard
-            key={p.slug}
-            product={p}
-            onAction={() => handleSubscribe(p.slug)}
-            actionLabel={subscribing === p.slug ? "Subscribing..." : undefined}
-            disabled={subscribing === p.slug}
-          />
-        ))}
+        {loading && products.length === 0
+          ? Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)
+          : products.map((p) => (
+              <ProductCard
+                key={p.slug}
+                product={p}
+                onAction={() => handleSubscribe(p.slug)}
+                actionLabel={subscribing === p.slug ? "Subscribing..." : undefined}
+                disabled={subscribing === p.slug}
+              />
+            ))}
       </div>
 
       {cursor && (
-        <button
-          type="button"
-          onClick={() => load(false)}
-          className="mt-4 rounded-lg border border-border px-4 py-2 text-sm hover:bg-muted"
-        >
-          Load more
-        </button>
+        <Button variant="outline" className="mt-6" onClick={() => load(false)} disabled={loading}>
+          {loading ? "Loading..." : "Load more"}
+        </Button>
       )}
     </div>
   );

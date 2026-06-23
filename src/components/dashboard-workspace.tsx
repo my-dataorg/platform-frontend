@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback } from "react";
-import { LayoutGrid, Store } from "lucide-react";
+import { LayoutGrid, Sparkles, Store } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { ProductEmbedPane } from "@/components/product-embed-pane";
 import { ShellHeader } from "@/components/shell-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import type { Product } from "@/lib/api";
 import type { PendingInvitation } from "@/lib/invitations";
@@ -21,6 +25,30 @@ type Props = {
   };
   invites: PendingInvitation[];
 };
+
+function DashboardLoading() {
+  return (
+    <div className="min-h-screen bg-muted/30">
+      <div className="sticky top-0 z-40 border-b border-border bg-card/85 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <Skeleton className="h-5 w-20" />
+          <div className="flex gap-2">
+            <Skeleton className="h-10 w-10 rounded-xl" />
+            <Skeleton className="h-10 w-32 rounded-xl" />
+          </div>
+        </div>
+      </div>
+      <main className="mx-auto max-w-6xl px-6 py-10">
+        <Skeleton className="h-8 w-64" />
+        <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-52 rounded-xl" />
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
 
 function DashboardShellInner({ products, greeting, firstName, user, invites }: Props) {
   const router = useRouter();
@@ -40,7 +68,7 @@ function DashboardShellInner({ products, greeting, firstName, user, invites }: P
   );
 
   return (
-    <div className={activeProduct ? "h-screen overflow-hidden" : undefined}>
+    <div className={activeProduct ? "h-screen overflow-hidden" : "min-h-screen bg-muted/30"}>
       <ShellHeader
         user={user}
         invites={invites}
@@ -54,8 +82,11 @@ function DashboardShellInner({ products, greeting, firstName, user, invites }: P
         <main className="mx-auto max-w-6xl flex-1 px-6 py-10">
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-primary">My apps</p>
-              <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <p className="text-sm font-medium text-primary">My apps</p>
+              </div>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight">
                 {greeting}, {firstName}
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -63,30 +94,31 @@ function DashboardShellInner({ products, greeting, firstName, user, invites }: P
               </p>
             </div>
             {subscribed.length > 0 && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 text-sm text-muted-foreground shadow-sm">
+              <Badge variant="secondary" className="gap-2 px-4 py-2 text-sm">
                 <LayoutGrid className="h-4 w-4" />
                 {subscribed.length} app{subscribed.length === 1 ? "" : "s"} subscribed
-              </div>
+              </Badge>
             )}
           </div>
 
           {subscribed.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-card px-8 py-20 text-center shadow-sm">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Store className="h-7 w-7" />
-              </div>
-              <h2 className="mt-5 text-lg font-semibold">No apps yet</h2>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
-                Browse the marketplace to discover and subscribe to MyData products.
-              </p>
-              <Link
-                href="/marketplace"
-                className="mt-6 inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-              >
-                <Store className="h-4 w-4" />
-                Browse Marketplace
-              </Link>
-            </div>
+            <Card className="border-dashed bg-card/80">
+              <CardContent className="flex flex-col items-center px-8 py-20 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Store className="h-7 w-7" />
+                </div>
+                <h2 className="mt-5 text-lg font-semibold">No apps yet</h2>
+                <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
+                  Browse the marketplace to discover and subscribe to MyData products.
+                </p>
+                <Button className="mt-6 gap-2" asChild>
+                  <Link href="/marketplace">
+                    <Store className="h-4 w-4" />
+                    Browse Marketplace
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {subscribed.map((p) => (
@@ -102,13 +134,7 @@ function DashboardShellInner({ products, greeting, firstName, user, invites }: P
 
 export function DashboardShell(props: Props) {
   return (
-    <Suspense
-      fallback={
-        <main className="mx-auto max-w-6xl flex-1 px-6 py-10 text-sm text-muted-foreground">
-          Loading dashboard...
-        </main>
-      }
-    >
+    <Suspense fallback={<DashboardLoading />}>
       <DashboardShellInner {...props} />
     </Suspense>
   );

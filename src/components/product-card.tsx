@@ -1,6 +1,10 @@
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { productIcon } from "@/lib/product-icons";
 import type { Product } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 type Props = {
   product: Product;
@@ -15,55 +19,60 @@ export function ProductCard({ product, onAction, onLaunch, actionLabel, disabled
   const label = actionLabel ?? (product.subscribed ? "Launch" : "Subscribe");
 
   return (
-    <article className="group relative flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
-      <div className="mb-4 flex items-start justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" />
+    <Card className="group flex flex-col transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary transition group-hover:bg-primary/15">
+            <Icon className="h-5 w-5" />
+          </div>
+          {product.subscribed && <Badge>Subscribed</Badge>}
+          {product.featured && !product.subscribed && <Badge variant="secondary">Featured</Badge>}
         </div>
-        {product.subscribed && (
-          <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
-            Subscribed
-          </span>
-        )}
-        {product.featured && !product.subscribed && (
-          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
-            Featured
-          </span>
-        )}
-      </div>
-
-      <h3 className="text-base font-semibold">{product.name}</h3>
-      <p className="mt-1 line-clamp-2 flex-1 text-sm text-muted-foreground">
-        {product.shortDescription}
-      </p>
-
-      {product.subscribed ? (
-        onLaunch ? (
-          <button
-            type="button"
-            onClick={onLaunch}
-            className="mt-5 w-full cursor-pointer rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-          >
-            {label}
-          </button>
+        <h3 className="text-base font-semibold tracking-tight">{product.name}</h3>
+      </CardHeader>
+      <CardContent className="flex-1 pt-0">
+        <p className="line-clamp-2 text-sm text-muted-foreground">{product.shortDescription}</p>
+      </CardContent>
+      <CardFooter className="pt-0">
+        {product.subscribed ? (
+          onLaunch ? (
+            <Button className="w-full" onClick={onLaunch}>
+              {label}
+            </Button>
+          ) : (
+            <Button className="w-full" asChild>
+              <Link href={product.launchUrl}>{label}</Link>
+            </Button>
+          )
         ) : (
-          <Link
-            href={product.launchUrl}
-            className="mt-5 block w-full cursor-pointer rounded-lg bg-primary py-2.5 text-center text-sm font-medium text-primary-foreground transition hover:opacity-90"
-          >
+          <Button className="w-full" onClick={onAction} disabled={disabled}>
             {label}
-          </Link>
-        )
-      ) : (
-        <button
-          type="button"
-          onClick={onAction}
-          disabled={disabled}
-          className="mt-5 w-full cursor-pointer rounded-lg bg-primary py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {label}
-        </button>
-      )}
-    </article>
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  );
+}
+
+export function ProductCardSkeleton() {
+  return (
+    <Card className="flex flex-col">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="h-11 w-11 animate-pulse rounded-xl bg-muted" />
+          <div className="h-5 w-16 animate-pulse rounded-full bg-muted" />
+        </div>
+        <div className="mt-2 h-5 w-2/3 animate-pulse rounded bg-muted" />
+      </CardHeader>
+      <CardContent className="flex-1 pt-0">
+        <div className="space-y-2">
+          <div className="h-3 w-full animate-pulse rounded bg-muted" />
+          <div className="h-3 w-4/5 animate-pulse rounded bg-muted" />
+        </div>
+      </CardContent>
+      <CardFooter className="pt-0">
+        <div className={cn("h-10 w-full animate-pulse rounded-lg bg-muted")} />
+      </CardFooter>
+    </Card>
   );
 }

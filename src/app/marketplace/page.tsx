@@ -10,14 +10,16 @@ export default async function MarketplacePage() {
   return (
     <>
       <ShellNav />
-      <main className="mx-auto max-w-6xl flex-1 px-6 py-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-semibold tracking-tight">Marketplace</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Discover and subscribe to products
-          </p>
+      <main className="min-h-screen bg-muted/30">
+        <div className="mx-auto max-w-6xl flex-1 px-6 py-10">
+          <div className="mb-8">
+            <h1 className="text-3xl font-semibold tracking-tight">Marketplace</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Discover and subscribe to products
+            </p>
+          </div>
+          <MarketplaceClient />
         </div>
-        <MarketplaceClient />
       </main>
     </>
   );

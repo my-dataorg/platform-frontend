@@ -22,7 +22,7 @@ export function ShellHeader({ user, invites, activeApp }: Props) {
   const ActiveIcon = activeApp ? productIcon(activeApp.slug) : null;
 
   return (
-    <header className="sticky top-0 z-40 border-b border-border/80 bg-card/85 shadow-sm backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-border/80 bg-card/90 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-card/80">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <div className="flex min-w-0 items-center gap-3">
           <Link
