@@ -12,7 +12,14 @@ export async function GET(req: NextRequest) {
 
   const url = new URL(req.url);
   const qs = url.searchParams.toString();
-  const res = await fetch(`${API}/v1/products?${qs}`, { headers });
-  const data = await res.json();
-  return NextResponse.json(data, { status: res.status });
+  try {
+    const res = await fetch(`${API}/v1/products?${qs}`, { headers, cache: "no-store" });
+    const data = await res.json().catch(() => ({}));
+    return NextResponse.json(data, { status: res.status });
+  } catch {
+    return NextResponse.json(
+      { items: [], nextCursor: null, totalApprox: 0, error: "subscriptions API unreachable" },
+      { status: 503 }
+    );
+  }
 }

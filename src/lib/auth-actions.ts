@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 const APP_URL = process.env.AUTH_URL || "http://localhost:3000";
+const EDUCATION_URL = process.env.EDUCATION_APP_URL || "http://localhost:3010";
 
 async function getServerJwt() {
   const headersList = await headers();
@@ -25,10 +26,19 @@ export async function signInFresh(redirectTo: string) {
   });
 }
 
-/** Clear NextAuth session and Keycloak SSO session. */
-export async function federatedSignOut() {
+/** Clear platform session and return URLs for federated logout relay. */
+export async function prepareLogout() {
   const token = await getServerJwt();
   const idToken = token?.idToken as string | undefined;
   await signOut({ redirect: false });
-  redirect(keycloakLogoutUrl(APP_URL, idToken));
+
+  return {
+    keycloakLogoutUrl: keycloakLogoutUrl(APP_URL, idToken),
+    educationSignOutUrl: `${EDUCATION_URL}/api/auth/signout?callbackUrl=${encodeURIComponent(`${EDUCATION_URL}/login`)}`,
+  };
+}
+
+/** Clear NextAuth session, product sessions, and Keycloak SSO. */
+export async function federatedSignOut() {
+  redirect("/logout");
 }

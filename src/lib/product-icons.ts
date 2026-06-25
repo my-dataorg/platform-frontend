@@ -8,6 +8,7 @@ import {
   MessageCircle,
   PartyPopper,
   Receipt,
+  Spade,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -15,6 +16,7 @@ import {
 const ICONS: Record<string, LucideIcon> = {
   education: GraduationCap,
   social: Users,
+  "poker-world": Spade,
   analytics: BarChart3,
   calendar: Calendar,
   messaging: MessageCircle,

@@ -5,7 +5,7 @@ const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function fetchProductsAuthenticated(
   params: Record<string, string | undefined>
-): Promise<ProductList> {
+): Promise<ProductList & { loadError?: string }> {
   const session = await auth();
   const search = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
@@ -17,12 +17,25 @@ export async function fetchProductsAuthenticated(
     headers.Authorization = `Bearer ${session.accessToken}`;
   }
 
-  const res = await fetch(`${API}/v1/products?${search}`, {
-    headers,
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("Failed to load products");
-  return res.json();
+  try {
+    const res = await fetch(`${API}/v1/products?${search}`, {
+      headers,
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      console.error(`products API ${res.status} from ${API}`);
+      return { items: [], nextCursor: null, totalApprox: 0, loadError: `API returned ${res.status}` };
+    }
+    return res.json();
+  } catch (err) {
+    console.error("products API unreachable:", err);
+    return {
+      items: [],
+      nextCursor: null,
+      totalApprox: 0,
+      loadError: "Subscriptions API unreachable — is platform-backend running on port 8002?",
+    };
+  }
 }
 
 export async function subscribeAuthenticated(productSlug: string) {

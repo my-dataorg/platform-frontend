@@ -13,6 +13,7 @@ const CATEGORIES = [
   { slug: "", name: "All" },
   { slug: "learning", name: "Learning" },
   { slug: "community", name: "Community" },
+  { slug: "lifestyle", name: "Lifestyle" },
   { slug: "business", name: "Business" },
   { slug: "productivity", name: "Productivity" },
 ];

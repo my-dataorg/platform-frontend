@@ -54,14 +54,17 @@ export function UserMenu({ name, email }: Props) {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <form action={federatedSignOut} className="w-full">
-            <button type="submit" className="flex w-full items-center gap-2">
-              <LogOut />
+        <div className="p-1">
+          <form action={federatedSignOut}>
+            <button
+              type="submit"
+              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-muted"
+            >
+              <LogOut className="h-4 w-4 text-muted-foreground" />
               Sign out
             </button>
           </form>
-        </DropdownMenuItem>
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );

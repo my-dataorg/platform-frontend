@@ -17,6 +17,7 @@ import type { PendingInvitation } from "@/lib/invitations";
 
 type Props = {
   products: Product[];
+  productsLoadError?: string;
   greeting: string;
   firstName: string;
   user: {
@@ -50,7 +51,14 @@ function DashboardLoading() {
   );
 }
 
-function DashboardShellInner({ products, greeting, firstName, user, invites }: Props) {
+function DashboardShellInner({
+  products,
+  productsLoadError,
+  greeting,
+  firstName,
+  user,
+  invites,
+}: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const appSlug = searchParams.get("app");
@@ -61,7 +69,12 @@ function DashboardShellInner({ products, greeting, firstName, user, invites }: P
 
   const launchProduct = useCallback(
     (product: Product) => {
-      const defaultPath = product.slug === "education" ? "/institutes" : "/";
+      const defaultPath =
+        product.slug === "education"
+          ? "/institutes"
+          : product.slug === "poker-world"
+            ? "/venues"
+            : "/";
       router.push(dashboardAppUrl(product.slug, defaultPath));
     },
     [router]
@@ -100,6 +113,12 @@ function DashboardShellInner({ products, greeting, firstName, user, invites }: P
               </Badge>
             )}
           </div>
+
+          {productsLoadError && (
+            <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {productsLoadError}
+            </p>
+          )}
 
           {subscribed.length === 0 ? (
             <Card className="border-dashed bg-card/80">

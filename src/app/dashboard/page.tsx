@@ -9,7 +9,7 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const [{ items }, invites] = await Promise.all([
+  const [{ items, loadError }, invites] = await Promise.all([
     fetchProductsAuthenticated({ limit: "48" }),
     fetchPendingInvitations(session),
   ]);
@@ -19,6 +19,7 @@ export default async function DashboardPage() {
   return (
     <DashboardShell
       products={items}
+      productsLoadError={loadError}
       greeting={greeting}
       firstName={firstName}
       user={{
