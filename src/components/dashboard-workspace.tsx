@@ -27,6 +27,7 @@ type Props = {
     email?: string | null;
   };
   invites: PendingInvitation[];
+  accessToken?: string | null;
 };
 
 function DashboardLoading() {
@@ -52,6 +53,7 @@ function DashboardShellInner({
   firstName,
   user,
   invites,
+  accessToken,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,7 +70,9 @@ function DashboardShellInner({
           ? "/institutes"
           : product.slug === "poker-world"
             ? "/venues"
-            : "/";
+            : product.slug === "business"
+              ? "/businesses"
+              : "/";
       router.push(dashboardAppUrl(product.slug, defaultPath));
     },
     [router]
@@ -84,7 +88,20 @@ function DashboardShellInner({
         }
       />
       {activeProduct ? (
-        <ProductEmbedPane product={activeProduct} path={embedPath} />
+        <ProductEmbedPane
+          product={activeProduct}
+          path={embedPath}
+          accessToken={accessToken}
+        />
+      ) : appSlug ? (
+        <main className="mx-auto max-w-lg px-6 py-16 text-center">
+          <p className="text-sm text-muted-foreground">
+            No active subscription for <strong>{appSlug}</strong>, or the catalog failed to load.
+          </p>
+          <Button asChild className="mt-6">
+            <Link href="/dashboard">Back to dashboard</Link>
+          </Button>
+        </main>
       ) : (
         <main className="mx-auto max-w-7xl flex-1 px-4 py-10 sm:px-6">
           <PageHeader

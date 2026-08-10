@@ -1,26 +1,50 @@
 import NextAuth from "next-auth";
-import Keycloak from "next-auth/providers/keycloak";
+import Credentials from "next-auth/providers/credentials";
+
+const API = (
+  process.env.SUBSCRIPTIONS_API_URL || "http://127.0.0.1:8002"
+).replace("://localhost", "://127.0.0.1");
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
-    Keycloak({
-      clientId: process.env.KEYCLOAK_CLIENT_ID!,
-      clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || "",
-      issuer: process.env.KEYCLOAK_ISSUER,
+    Credentials({
+      name: "Credentials",
+      credentials: {
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        const username = String(credentials?.username || "").trim();
+        const password = String(credentials?.password || "");
+        if (!username || !password) return null;
+
+        const res = await fetch(`${API}/v1/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        const user = data.user;
+        if (!user?.id || !data.accessToken) return null;
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          accessToken: data.accessToken as string,
+        };
+      },
     }),
   ],
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
-    async jwt({ token, account, profile }) {
-      if (account?.access_token) {
-        token.accessToken = account.access_token;
-      }
-      if (account?.id_token) {
-        token.idToken = account.id_token;
-      }
-      if (profile?.sub) {
-        token.userId = profile.sub;
-      } else if (token.sub) {
-        token.userId = token.sub;
+    async jwt({ token, user }) {
+      if (user) {
+        token.accessToken = (user as { accessToken?: string }).accessToken;
+        token.userId = user.id;
       }
       return token;
     },
