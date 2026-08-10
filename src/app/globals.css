@@ -1,25 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --background: 0 0% 99%;
-  --foreground: 240 10% 10%;
-  --muted: 240 5% 96%;
-  --muted-foreground: 240 4% 46%;
-  --border: 240 6% 90%;
+  --background: 210 20% 96%;
+  --foreground: 222 47% 11%;
+  --muted: 210 16% 93%;
+  --muted-foreground: 215 16% 40%;
+  --border: 214 20% 88%;
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 10%;
+  --card-foreground: 222 47% 11%;
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 10%;
-  --primary: 221 83% 53%;
+  --popover-foreground: 222 47% 11%;
+  --shell: 222 47% 14%;
+  --shell-foreground: 210 40% 98%;
+  --shell-muted: 215 20% 65%;
+  --primary: 174 72% 32%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 240 5% 96%;
-  --secondary-foreground: 240 10% 10%;
-  --accent: 240 5% 96%;
-  --accent-foreground: 240 10% 10%;
+  --secondary: 210 16% 93%;
+  --secondary-foreground: 222 47% 11%;
+  --accent: 174 40% 94%;
+  --accent-foreground: 174 72% 24%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 100%;
-  --ring: 221 83% 53%;
-  --input: 240 6% 90%;
+  --ring: 174 72% 32%;
+  --input: 214 20% 88%;
+  --sidebar-active: 174 60% 36%;
   --radius: 0.75rem;
   --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.04);
   --shadow-md: 0 4px 12px rgb(0 0 0 / 0.06);
@@ -35,6 +39,9 @@
   --color-card-foreground: hsl(var(--card-foreground));
   --color-popover: hsl(var(--popover));
   --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-shell: hsl(var(--shell));
+  --color-shell-foreground: hsl(var(--shell-foreground));
+  --color-shell-muted: hsl(var(--shell-muted));
   --color-primary: hsl(var(--primary));
   --color-primary-foreground: hsl(var(--primary-foreground));
   --color-secondary: hsl(var(--secondary));
@@ -45,7 +52,9 @@
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-ring: hsl(var(--ring));
   --color-input: hsl(var(--input));
+  --color-sidebar-active: hsl(var(--sidebar-active));
   --font-sans: var(--font-geist-sans);
+  --font-serif: var(--font-source-serif);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
   --radius-sm: calc(var(--radius) - 4px);
@@ -57,4 +66,8 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.font-serif {
+  font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
 }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Product } from "@/lib/api";
+import { dashboardAppUrl } from "@/lib/product-embed";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = [
@@ -24,9 +25,9 @@ async function fetchProductsClient(params: URLSearchParams) {
   return res.json();
 }
 
-export function MarketplaceClient() {
+export function MarketplaceClient({ initialQuery = "" }: { initialQuery?: string }) {
   const router = useRouter();
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [category, setCategory] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
@@ -138,6 +139,14 @@ export function MarketplaceClient() {
                 key={p.slug}
                 product={p}
                 onAction={() => handleSubscribe(p.slug)}
+                onLaunch={
+                  p.subscribed
+                    ? () => {
+                        const defaultPath = p.slug === "education" ? "/institutes" : "/";
+                        router.push(dashboardAppUrl(p.slug, defaultPath));
+                      }
+                    : undefined
+                }
                 actionLabel={subscribing === p.slug ? "Subscribing..." : undefined}
                 disabled={subscribing === p.slug}
               />

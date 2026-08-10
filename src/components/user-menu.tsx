@@ -14,25 +14,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { federatedSignOut } from "@/lib/auth-actions";
 import { userDisplayName, userInitials } from "@/lib/user-display";
+import { cn } from "@/lib/utils";
 
 type Props = {
   name?: string | null;
   email?: string | null;
+  shell?: boolean;
 };
 
-export function UserMenu({ name, email }: Props) {
+export function UserMenu({ name, email, shell }: Props) {
   const displayName = userDisplayName(name, email);
   const initials = userInitials(name, email);
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="h-auto gap-2 rounded-xl px-2 py-1.5">
+        <Button
+          variant={shell ? "ghost" : "outline"}
+          className={cn(
+            "h-auto gap-2 rounded-xl px-2 py-1.5",
+            shell && "border border-white/15 bg-white/10 text-shell-foreground hover:bg-white/15 hover:text-shell-foreground"
+          )}
+        >
           <Avatar className="h-8 w-8">
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback className={shell ? "bg-primary text-primary-foreground ring-0" : undefined}>
+              {initials}
+            </AvatarFallback>
           </Avatar>
           <span className="hidden max-w-[140px] truncate font-medium sm:inline">{displayName}</span>
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          <ChevronDown className={cn("h-4 w-4", shell ? "text-shell-muted" : "text-muted-foreground")} />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
