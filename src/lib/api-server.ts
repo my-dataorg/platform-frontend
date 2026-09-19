@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import type { ProductList } from "@/lib/api";
+import { normalizeProduct, type ProductList } from "@/lib/api";
 
 const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
@@ -26,7 +26,11 @@ export async function fetchProductsAuthenticated(
       console.error(`products API ${res.status} from ${API}`);
       return { items: [], nextCursor: null, totalApprox: 0, loadError: `API returned ${res.status}` };
     }
-    return res.json();
+    const data = (await res.json()) as ProductList;
+    return {
+      ...data,
+      items: data.items.map((item) => normalizeProduct(item as ProductList["items"][number] & Record<string, unknown>)),
+    };
   } catch (err) {
     console.error("products API unreachable:", err);
     return {

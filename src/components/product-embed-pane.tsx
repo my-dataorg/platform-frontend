@@ -1,27 +1,30 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { Product } from "@/lib/api";
-import { buildEmbedUrl } from "@/lib/product-embed";
+import { buildEmbedUrl, safeProductPath } from "@/lib/product-embed";
 
 const SHELL_HEADER_PX = 64;
 
 export function ProductEmbedPane({
   product,
   path = "/",
-  accessToken,
 }: {
   product: Product;
   path?: string;
-  accessToken?: string | null;
 }) {
+  const safePath = safeProductPath(path);
+  const handoffKey = `${product.slug}:${safePath}`;
+  const [handoff, setHandoff] = useState<{ key: string; code?: string; failed?: boolean }>({
+    key: "",
+  });
+  const handoffCode = handoff.key === handoffKey ? handoff.code : undefined;
+  const handoffFailed = handoff.key === handoffKey && handoff.failed === true;
   const src = useMemo(
-    () => buildEmbedUrl(product.launchUrl, path, accessToken),
-    [product.launchUrl, path, accessToken]
+    () => buildEmbedUrl(product.launchUrl, safePath, handoffCode, product.embedEnabled),
+    [product.launchUrl, safePath, handoffCode, product.embedEnabled]
   );
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(600);
-  const [failed, setFailed] = useState(false);
 
   useLayoutEffect(() => {
     function resize() {
@@ -33,20 +36,51 @@ export function ProductEmbedPane({
   }, []);
 
   useEffect(() => {
+    if (!product.embedEnabled) return;
     let cancelled = false;
-    const timer = window.setTimeout(() => {
-      fetch(product.launchUrl, { mode: "no-cors", cache: "no-store" }).catch(() => {
-        if (!cancelled) setFailed(true);
+    fetch(`/api/products/${encodeURIComponent(product.slug)}/handoff`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ path: safePath }),
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("handoff failed");
+        return response.json() as Promise<{ code?: string }>;
+      })
+      .then((handoff) => {
+        if (cancelled) return;
+        if (!handoff.code) throw new Error("handoff missing code");
+        setHandoff({ key: handoffKey, code: handoff.code });
+      })
+      .catch(() => {
+        if (!cancelled) setHandoff({ key: handoffKey, failed: true });
       });
-    }, 2000);
     return () => {
       cancelled = true;
-      window.clearTimeout(timer);
     };
-  }, [product.launchUrl, src]);
+  }, [handoffKey, product.embedEnabled, product.slug, safePath]);
 
-  const openUrl =
-    product.launchUrl.replace(/\/$/, "") + (path.startsWith("/") ? path : `/${path}`);
+  const openUrl = new URL(
+    `${product.launchUrl.replace(/\/$/, "")}${safePath}`
+  ).toString();
+
+  if (!product.embedEnabled) {
+    return (
+      <div className="flex h-full min-h-[400px] flex-col items-center justify-center gap-3 bg-background px-6 text-center">
+        <p className="text-sm text-muted-foreground">
+          {product.name} opens in a separate window.
+        </p>
+        <a
+          href={openUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+        >
+          Open {product.name}
+        </a>
+      </div>
+    );
+  }
 
   return (
     <div className="relative bg-background" style={{ height: `${height}px` }}>
@@ -60,11 +94,12 @@ export function ProductEmbedPane({
           Open in new tab
         </a>
       </div>
-      {failed && (
+      {handoffFailed && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center">
           <p className="text-sm text-muted-foreground">
-            {product.name} is not reachable at {product.launchUrl}. Start the Business app, then
-            retry.
+            {handoffFailed
+              ? `Could not securely open ${product.name}.`
+              : `${product.name} is not reachable.`}
           </p>
           <a
             href={openUrl}
@@ -76,19 +111,19 @@ export function ProductEmbedPane({
           </a>
         </div>
       )}
-      <iframe
-        ref={iframeRef}
-        title={product.name}
-        src={src}
-        style={{
-          display: "block",
-          width: "100%",
-          height: "100%",
-          border: 0,
-        }}
-        className="bg-background"
-        allow="clipboard-write"
-      />
+      {handoffCode && !handoffFailed ? (
+        <iframe
+          title={product.name}
+          src={src}
+          style={{ display: "block", width: "100%", height: "100%", border: 0 }}
+          className="bg-background"
+          allow="clipboard-write"
+        />
+      ) : (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          Opening securely…
+        </div>
+      )}
     </div>
   );
 }

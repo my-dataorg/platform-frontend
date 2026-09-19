@@ -9,11 +9,14 @@ type Props = {
   product: Product;
   onAction?: () => void;
   onLaunch?: () => void;
+  onEdit?: () => void;
+  admin?: boolean;
   actionLabel?: string;
   disabled?: boolean;
 };
 
-export function ProductCard({ product, onAction, onLaunch, actionLabel, disabled }: Props) {
+export function ProductCard({ product, onAction, onLaunch, onEdit, admin, actionLabel, disabled }: Props) {
+  // Product icons are selected from a fixed registry by slug.
   const Icon = productIcon(product.slug);
   const label = actionLabel ?? (product.subscribed ? "Launch" : "Subscribe");
 
@@ -21,15 +24,21 @@ export function ProductCard({ product, onAction, onLaunch, actionLabel, disabled
     <article className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
       <div className="mb-4 flex items-start justify-between">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-shell text-shell-foreground transition">
+          {/* eslint-disable-next-line react-hooks/static-components */}
           <Icon className="h-5 w-5" />
         </div>
+        {admin && !product.enabled && <Badge variant="secondary">Archived</Badge>}
         {product.subscribed && <Badge>Subscribed</Badge>}
         {product.featured && !product.subscribed && <Badge variant="secondary">Featured</Badge>}
       </div>
       <h3 className="font-serif text-lg font-semibold tracking-tight">{product.name}</h3>
       <p className="mt-1.5 line-clamp-2 flex-1 text-sm text-muted-foreground">{product.shortDescription}</p>
       <div className="mt-5">
-        {product.subscribed ? (
+        {admin ? (
+          <Button className="w-full" variant="outline" onClick={onEdit}>
+            Edit product
+          </Button>
+        ) : product.subscribed ? (
           onLaunch ? (
             <Button className="w-full" onClick={onLaunch}>
               {label}

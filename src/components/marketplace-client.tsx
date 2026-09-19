@@ -9,6 +9,9 @@ import { Input } from "@/components/ui/input";
 import type { Product } from "@/lib/api";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import { cn } from "@/lib/utils";
+import { Dialog } from "@/components/ui/dialog";
+import { ProductForm } from "@/components/admin/product-form";
+import { type AdminProduct, toAdminProduct } from "@/lib/admin-products";
 
 const CATEGORIES = [
   { slug: "", name: "All" },
@@ -25,16 +28,25 @@ async function fetchProductsClient(params: URLSearchParams) {
   return res.json();
 }
 
-export function MarketplaceClient({ initialQuery = "" }: { initialQuery?: string }) {
+export function MarketplaceClient({
+  initialQuery = "",
+  initialAdminProducts,
+}: {
+  initialQuery?: string;
+  initialAdminProducts?: AdminProduct[];
+}) {
   const router = useRouter();
+  const adminMode = initialAdminProducts !== undefined;
   const [q, setQ] = useState(initialQuery);
   const [category, setCategory] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
-  const [total, setTotal] = useState(0);
+  const [products, setProducts] = useState<Product[]>(initialAdminProducts ?? []);
+  const [total, setTotal] = useState(initialAdminProducts?.length ?? 0);
   const [cursor, setCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingProduct, setEditingProduct] = useState<AdminProduct | null>(null);
+  const [creatingProduct, setCreatingProduct] = useState(false);
 
   const load = useCallback(
     async (reset = false) => {
@@ -60,10 +72,27 @@ export function MarketplaceClient({ initialQuery = "" }: { initialQuery?: string
   );
 
   useEffect(() => {
-    setCursor(null);
+    if (adminMode) return;
+    // Loading a new query intentionally updates the result state from this effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     load(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, category]);
+  }, [q, category, adminMode]);
+
+  async function refreshAdminProducts() {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch("/api/admin/products", { cache: "no-store" });
+      if (!response.ok) throw new Error("Could not load admin products");
+      const data = (await response.json()) as { items?: Record<string, unknown>[] };
+      setProducts((data.items ?? []).map(toAdminProduct));
+    } catch {
+      setError("Could not refresh products.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubscribe(slug: string) {
     setSubscribing(slug);
@@ -93,12 +122,19 @@ export function MarketplaceClient({ initialQuery = "" }: { initialQuery?: string
   return (
     <div>
       <div className="sticky top-16 z-30 -mx-6 border-b border-border bg-background/95 px-6 py-4 backdrop-blur-md">
-        <Input
-          type="search"
-          placeholder="Search products..."
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
+        <div className="flex items-center gap-3">
+          <Input
+            type="search"
+            placeholder="Search products..."
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+          {adminMode && (
+            <Button onClick={() => setCreatingProduct(true)} className="shrink-0">
+              New product
+            </Button>
+          )}
+        </div>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
           {CATEGORIES.map((c) => (
             <button
@@ -138,13 +174,16 @@ export function MarketplaceClient({ initialQuery = "" }: { initialQuery?: string
               <ProductCard
                 key={p.slug}
                 product={p}
-                onAction={() => handleSubscribe(p.slug)}
+                admin={adminMode}
+                onAction={adminMode ? undefined : () => handleSubscribe(p.slug)}
+                onEdit={
+                  adminMode
+                    ? () => setEditingProduct(p as AdminProduct)
+                    : undefined
+                }
                 onLaunch={
                   p.subscribed
-                    ? () => {
-                        const defaultPath = p.slug === "education" ? "/institutes" : "/";
-                        router.push(dashboardAppUrl(p.slug, defaultPath));
-                      }
+                    ? () => router.push(dashboardAppUrl(p.slug, p.defaultPath))
                     : undefined
                 }
                 actionLabel={subscribing === p.slug ? "Subscribing..." : undefined}
@@ -158,6 +197,45 @@ export function MarketplaceClient({ initialQuery = "" }: { initialQuery?: string
           {loading ? "Loading..." : "Load more"}
         </Button>
       )}
+
+      <Dialog
+        open={creatingProduct || editingProduct !== null}
+        title={creatingProduct ? "New product" : "Edit product"}
+        description="Configure catalog visibility, launch paths, and embed behavior."
+        onClose={() => {
+          setCreatingProduct(false);
+          setEditingProduct(null);
+        }}
+      >
+        <ProductForm
+          product={
+            editingProduct ?? {
+              slug: "new",
+              name: "",
+              shortDescription: "",
+              iconUrl: "",
+              category: "",
+              tags: [],
+              featured: false,
+              subscribed: false,
+              launchUrl: "",
+              defaultPath: "/",
+              enabled: true,
+              embedEnabled: true,
+              status: "enabled",
+            }
+          }
+          onCancel={() => {
+            setCreatingProduct(false);
+            setEditingProduct(null);
+          }}
+          onSaved={() => {
+            setCreatingProduct(false);
+            setEditingProduct(null);
+            void refreshAdminProducts();
+          }}
+        />
+      </Dialog>
     </div>
   );
 }

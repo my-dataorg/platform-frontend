@@ -27,7 +27,6 @@ type Props = {
     email?: string | null;
   };
   invites: PendingInvitation[];
-  accessToken?: string | null;
 };
 
 function DashboardLoading() {
@@ -53,7 +52,6 @@ function DashboardShellInner({
   firstName,
   user,
   invites,
-  accessToken,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,19 +59,12 @@ function DashboardShellInner({
   const embedPath = searchParams.get("path") || "/";
 
   const subscribed = products.filter((p) => p.subscribed);
-  const activeProduct = appSlug ? subscribed.find((p) => p.slug === appSlug) : null;
+  const activeProduct =
+    appSlug ? subscribed.find((p) => p.slug === appSlug && p.enabled) : null;
 
   const launchProduct = useCallback(
     (product: Product) => {
-      const defaultPath =
-        product.slug === "education"
-          ? "/institutes"
-          : product.slug === "poker-world"
-            ? "/venues"
-            : product.slug === "business"
-              ? "/businesses"
-              : "/";
-      router.push(dashboardAppUrl(product.slug, defaultPath));
+      router.push(dashboardAppUrl(product.slug, product.defaultPath));
     },
     [router]
   );
@@ -91,7 +82,6 @@ function DashboardShellInner({
         <ProductEmbedPane
           product={activeProduct}
           path={embedPath}
-          accessToken={accessToken}
         />
       ) : appSlug ? (
         <main className="mx-auto max-w-lg px-6 py-16 text-center">

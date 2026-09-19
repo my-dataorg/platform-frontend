@@ -8,6 +8,9 @@ export type Product = {
   featured: boolean;
   subscribed: boolean;
   launchUrl: string;
+  defaultPath: string;
+  enabled: boolean;
+  embedEnabled: boolean;
 };
 
 export type ProductList = {
@@ -15,6 +18,18 @@ export type ProductList = {
   nextCursor: string | null;
   totalApprox: number;
 };
+
+export function normalizeProduct(product: Product & Record<string, unknown>): Product {
+  return {
+    ...product,
+    shortDescription: String(product.short_description ?? product.shortDescription ?? ""),
+    iconUrl: String(product.icon_url ?? product.iconUrl ?? ""),
+    launchUrl: String(product.launch_url ?? product.launchUrl ?? ""),
+    defaultPath: String(product.default_path ?? product.defaultPath ?? "/"),
+    enabled: product.enabled !== false && product.status !== "disabled",
+    embedEnabled: product.embed_enabled !== false && product.embedEnabled !== false,
+  };
+}
 
 const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 

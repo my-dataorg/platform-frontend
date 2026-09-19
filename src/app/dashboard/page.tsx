@@ -27,7 +27,6 @@ export default async function DashboardPage() {
         email: session.user?.email,
       }}
       invites={invites}
-      accessToken={session.accessToken}
     />
   );
 }
