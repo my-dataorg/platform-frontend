@@ -10,7 +10,7 @@ on:
 
 jobs:
   deploy:
-    uses: my-dataorg/mydata/.github/workflows/deploy-service.yml@main
+    uses: ./.github/workflows/deploy-service.yml
     with:
       service: platform-frontend
       image: ${{ inputs.image_ref }}
