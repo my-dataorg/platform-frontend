@@ -83,6 +83,7 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
           GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+          IMAGE: ${{ inputs.image }}
         run: |
           printf '%s' "$GHCR_TOKEN" | ssh -i "$HOME/.ssh/deploy_key" \
             -o StrictHostKeyChecking=yes -o BatchMode=yes \
@@ -92,9 +93,10 @@ jobs:
           ssh -i "$HOME/.ssh/deploy_key" \
             -o StrictHostKeyChecking=yes -o BatchMode=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" \
-            "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'REMOTE'
+            "DEPLOY_PATH='$DEPLOY_PATH' IMAGE='$IMAGE' bash -s" <<'REMOTE'
           set -eu
           cd "$DEPLOY_PATH"
+          export PLATFORM_FRONTEND_IMAGE="$IMAGE"
           [ -f service.env ] && cp service.env service.env.previous || true
           mv service.env.next service.env
 
