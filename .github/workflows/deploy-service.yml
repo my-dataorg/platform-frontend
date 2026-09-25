@@ -71,10 +71,11 @@ jobs:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
+          set -euo pipefail
           ssh -i "$HOME/.ssh/deploy_key" -o StrictHostKeyChecking=yes -o BatchMode=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH'"
-          scp -i "$HOME/.ssh/deploy_key" -o StrictHostKeyChecking=yes -o BatchMode=yes \
-            service.env "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/service.env.next"
+          ssh -i "$HOME/.ssh/deploy_key" -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" "cat > '$DEPLOY_PATH/service.env.next'" < service.env
 
       - name: Pull and restart platform frontend
         env:
