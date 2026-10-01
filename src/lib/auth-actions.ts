@@ -66,6 +66,7 @@ export async function signupWithProfile(
     addressLine1: String(formData.get("addressLine1") || "").trim() || null,
     city: String(formData.get("city") || "").trim() || null,
     country: String(formData.get("country") || "").trim() || null,
+    state: String(formData.get("state") || "").trim() || null,
     preferredLanguage: String(formData.get("preferredLanguage") || "en").trim() || "en",
   };
 

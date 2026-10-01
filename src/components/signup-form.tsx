@@ -1,16 +1,54 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useActionState } from "react";
 import Link from "next/link";
 import { signupWithProfile, type SignupState } from "@/lib/auth-actions";
 
 const initial: SignupState = {};
+const API = process.env.NEXT_PUBLIC_PLATFORM_API_URL || "http://localhost:8002";
+
+type Option = { code: string; name: string };
+type GenderOption = { code: string; label: string };
 
 const field =
   "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none ring-primary focus:ring-2";
 
 export function SignupForm() {
   const [state, action, pending] = useActionState(signupWithProfile, initial);
+  const [countries, setCountries] = useState<Option[]>([]);
+  const [genders, setGenders] = useState<GenderOption[]>([]);
+  const [states, setStates] = useState<Option[]>([]);
+  const [statesCountry, setStatesCountry] = useState("");
+  const [country, setCountry] = useState("");
+  const [optionsError, setOptionsError] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API}/v1/auth/registration-options`)
+      .then((response) => {
+        if (!response.ok) throw new Error("options");
+        return response.json();
+      })
+      .then((options) => {
+        setCountries(options.countries);
+        setGenders(options.genders);
+      })
+      .catch(() => setOptionsError(true));
+  }, []);
+
+  useEffect(() => {
+    if (!country) return;
+    fetch(`${API}/v1/auth/registration-options/${country}/states`)
+      .then((response) => response.json())
+      .then((options) => {
+        setStates(options.states);
+        setStatesCountry(country);
+      })
+      .catch(() => {
+        setStates([]);
+        setStatesCountry(country);
+      });
+  }, [country]);
 
   return (
     <form action={action} className="mt-6 space-y-4">
@@ -65,13 +103,13 @@ export function SignupForm() {
           </label>
           <select id="gender" name="gender" required className={field} defaultValue="">
             <option value="" disabled>
-              Select
+              {genders.length ? "Select" : "Loading…"}
             </option>
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-            <option value="non_binary">Non-binary</option>
-            <option value="prefer_not_to_say">Prefer not to say</option>
-            <option value="other">Other</option>
+            {genders.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
         <div>
@@ -110,13 +148,57 @@ export function SignupForm() {
         </div>
         <div>
           <label htmlFor="country" className="mb-1.5 block text-sm font-medium">
-            Country <span className="text-muted-foreground">(optional, e.g. IN)</span>
+            Country <span className="text-muted-foreground">(optional)</span>
           </label>
-          <input id="country" name="country" maxLength={2} className={field} />
+          <select
+            id="country"
+            name="country"
+            className={field}
+            value={country}
+            onChange={(event) => setCountry(event.target.value)}
+          >
+            <option value="">Select country</option>
+            {countries.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="state" className="mb-1.5 block text-sm font-medium">
+            State / Province <span className="text-muted-foreground">(optional)</span>
+          </label>
+          <select
+            id="state"
+            name="state"
+            disabled={!country || statesCountry !== country || !states.length}
+            className={field}
+          >
+            <option value="">
+              {!country
+                ? "Select country first"
+                : statesCountry !== country
+                  ? "Loading…"
+                  : states.length
+                    ? "Select state"
+                    : "Not available"}
+            </option>
+            {statesCountry === country &&
+              states.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.name}
+              </option>
+              ))}
+          </select>
         </div>
       </div>
 
-      {state.error ? (
+      {optionsError ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          Registration options could not be loaded. Please refresh and try again.
+        </p>
+      ) : state.error ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {typeof state.error === "string" ? state.error : "Could not create account."}
         </p>
