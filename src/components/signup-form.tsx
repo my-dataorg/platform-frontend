@@ -23,7 +23,7 @@ export function SignupForm() {
   const [optionsError, setOptionsError] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/registration-options")
+    fetch("/api/registration-options")
       .then((response) => {
         if (!response.ok) throw new Error("options");
         return response.json();
@@ -37,7 +37,7 @@ export function SignupForm() {
 
   useEffect(() => {
     if (!country) return;
-    fetch(`/api/auth/registration-options/${country}/states`)
+    fetch(`/api/registration-options/${country}/states`)
       .then((response) => response.json())
       .then((options) => {
         setStates(options.states);
