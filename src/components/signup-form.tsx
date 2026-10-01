@@ -6,7 +6,6 @@ import Link from "next/link";
 import { signupWithProfile, type SignupState } from "@/lib/auth-actions";
 
 const initial: SignupState = {};
-const API = process.env.NEXT_PUBLIC_PLATFORM_API_URL || "http://localhost:8002";
 
 type Option = { code: string; name: string };
 type GenderOption = { code: string; label: string };
@@ -24,7 +23,7 @@ export function SignupForm() {
   const [optionsError, setOptionsError] = useState(false);
 
   useEffect(() => {
-    fetch(`${API}/v1/auth/registration-options`)
+    fetch("/api/auth/registration-options")
       .then((response) => {
         if (!response.ok) throw new Error("options");
         return response.json();
@@ -38,7 +37,7 @@ export function SignupForm() {
 
   useEffect(() => {
     if (!country) return;
-    fetch(`${API}/v1/auth/registration-options/${country}/states`)
+    fetch(`/api/auth/registration-options/${country}/states`)
       .then((response) => response.json())
       .then((options) => {
         setStates(options.states);
