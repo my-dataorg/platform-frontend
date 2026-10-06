@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback } from "react";
-import { Building2, Factory, LayoutGrid, Store } from "lucide-react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { LayoutGrid, Store } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { ProductEmbedPane } from "@/components/product-embed-pane";
 import { ShellHeader } from "@/components/shell-header";
@@ -57,13 +57,36 @@ function DashboardShellInner({
   const searchParams = useSearchParams();
   const appSlug = searchParams.get("app");
   const embedPath = searchParams.get("path") || "/";
+  const [recentSlugs, setRecentSlugs] = useState<string[]>([]);
 
   const subscribed = products.filter((p) => p.subscribed);
+  const recentProducts = recentSlugs
+    .map((slug) => subscribed.find((product) => product.slug === slug && product.enabled))
+    .filter((product): product is Product => Boolean(product))
+    .slice(0, 3);
   const activeProduct =
     appSlug ? subscribed.find((p) => p.slug === appSlug && p.enabled) : null;
 
+  useEffect(() => {
+    const stored = window.localStorage.getItem("mydata:recent-apps");
+    const timer = window.setTimeout(() => {
+      if (!stored) return;
+      try {
+        setRecentSlugs(JSON.parse(stored));
+      } catch {
+        window.localStorage.removeItem("mydata:recent-apps");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const launchProduct = useCallback(
     (product: Product) => {
+      setRecentSlugs((current) => {
+        const next = [product.slug, ...current.filter((slug) => slug !== product.slug)].slice(0, 10);
+        window.localStorage.setItem("mydata:recent-apps", JSON.stringify(next));
+        return next;
+      });
       router.push(dashboardAppUrl(product.slug, product.defaultPath));
     },
     [router]
@@ -104,90 +127,63 @@ function DashboardShellInner({
             }
           />
 
-          <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            <MetricCard
-              icon={<LayoutGrid className="h-5 w-5" />}
-              label="Subscribed apps"
-              value={subscribed.length}
-              hint="Active entitlements"
-            />
-            <MetricCard
-              icon={<Store className="h-5 w-5" />}
-              label="Catalog"
-              value={products.length}
-              hint="Products available"
-            />
-            <MetricCard
-              icon={<LayoutGrid className="h-5 w-5" />}
-              label="Invitations"
-              value={invites.length}
-              hint="Pending responses"
-            />
-          </div>
+          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
+            <div>
+              {productsLoadError && (
+                <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  {productsLoadError}
+                </p>
+              )}
 
-          {productsLoadError && (
-            <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              {productsLoadError}
-            </p>
-          )}
+              {recentProducts.length > 0 && (
+                <>
+                  <h2 className="mb-4 font-serif text-xl font-semibold">Quick access</h2>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {recentProducts.map((p) => {
+                      const Icon = productIcon(p.slug);
+                      return (
+                        <ModuleCard
+                          key={p.slug}
+                          icon={<Icon className="h-6 w-6" />}
+                          title={p.name}
+                          description={p.shortDescription}
+                          onClick={() => launchProduct(p)}
+                        />
+                      );
+                    })}
+                  </div>
+                </>
+              )}
 
-          <h2 className="mb-4 font-serif text-xl font-semibold">Quick access</h2>
-          {subscribed.length === 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <ModuleCard
-                href="/marketplace"
-                icon={<Store className="h-6 w-6" />}
-                title="Marketplace"
-                description="Discover and subscribe to MyData products for your organization."
-              />
-            </div>
-          ) : (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {subscribed.some((p) => p.slug === "education" && p.enabled) && (
-                  <ModuleCard
-                    icon={<Building2 className="h-6 w-6" />}
-                    title="Create institute"
-                    description="You subscribed to Education. Create an institute to add staff and students."
-                    onClick={() =>
-                      router.push(dashboardAppUrl("education", "/institutes"))
-                    }
-                  />
-                )}
-                {subscribed.some((p) => p.slug === "business" && p.enabled) && (
-                  <ModuleCard
-                    icon={<Factory className="h-6 w-6" />}
-                    title="Create industry"
-                    description="You subscribed to Business. Create a small-scale industry to open Daily Sheet and Katha Book."
-                    onClick={() =>
-                      router.push(dashboardAppUrl("business", "/businesses"))
-                    }
-                  />
-                )}
-                {subscribed
-                  .filter((p) => p.slug !== "education" && p.slug !== "business")
-                  .slice(0, 2)
-                  .map((p) => {
-                    const Icon = productIcon(p.slug);
-                    return (
-                      <ModuleCard
-                        key={p.slug}
-                        icon={<Icon className="h-6 w-6" />}
-                        title={p.name}
-                        description={p.shortDescription}
-                        onClick={() => launchProduct(p)}
-                      />
-                    );
-                  })}
-              </div>
               <h2 className="mb-4 mt-10 font-serif text-xl font-semibold">My apps</h2>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {subscribed.map((p) => (
                   <ProductCard key={p.slug} product={p} onLaunch={() => launchProduct(p)} />
                 ))}
               </div>
-            </>
-          )}
+            </div>
+
+            <aside className="space-y-4 lg:sticky lg:top-24">
+              <MetricCard
+                icon={<LayoutGrid className="h-5 w-5" />}
+                label="Subscribed apps"
+                value={subscribed.length}
+                hint="Active entitlements"
+              />
+              <MetricCard
+                icon={<Store className="h-5 w-5" />}
+                label="Catalog"
+                value={products.length}
+                hint="Products available"
+              />
+              <MetricCard
+                icon={<LayoutGrid className="h-5 w-5" />}
+                label="Invitations"
+                value={invites.length}
+                hint="Pending responses"
+              />
+            </aside>
+          </div>
         </main>
       )}
     </div>
