@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback } from "react";
-import { LayoutGrid, Store } from "lucide-react";
+import { Building2, Factory, LayoutGrid, Store } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { ProductEmbedPane } from "@/components/product-embed-pane";
 import { ShellHeader } from "@/components/shell-header";
@@ -144,18 +144,41 @@ function DashboardShellInner({
           ) : (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
-                {subscribed.slice(0, 2).map((p) => {
-                  const Icon = productIcon(p.slug);
-                  return (
-                    <ModuleCard
-                      key={p.slug}
-                      icon={<Icon className="h-6 w-6" />}
-                      title={p.name}
-                      description={p.shortDescription}
-                      onClick={() => launchProduct(p)}
-                    />
-                  );
-                })}
+                {subscribed.some((p) => p.slug === "education" && p.enabled) && (
+                  <ModuleCard
+                    icon={<Building2 className="h-6 w-6" />}
+                    title="Create institute"
+                    description="You subscribed to Education. Create an institute to add staff and students."
+                    onClick={() =>
+                      router.push(dashboardAppUrl("education", "/institutes"))
+                    }
+                  />
+                )}
+                {subscribed.some((p) => p.slug === "business" && p.enabled) && (
+                  <ModuleCard
+                    icon={<Factory className="h-6 w-6" />}
+                    title="Create industry"
+                    description="You subscribed to Business. Create a small-scale industry to open Daily Sheet and Katha Book."
+                    onClick={() =>
+                      router.push(dashboardAppUrl("business", "/businesses"))
+                    }
+                  />
+                )}
+                {subscribed
+                  .filter((p) => p.slug !== "education" && p.slug !== "business")
+                  .slice(0, 2)
+                  .map((p) => {
+                    const Icon = productIcon(p.slug);
+                    return (
+                      <ModuleCard
+                        key={p.slug}
+                        icon={<Icon className="h-6 w-6" />}
+                        title={p.name}
+                        description={p.shortDescription}
+                        onClick={() => launchProduct(p)}
+                      />
+                    );
+                  })}
               </div>
               <h2 className="mb-4 mt-10 font-serif text-xl font-semibold">My apps</h2>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
