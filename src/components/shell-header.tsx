@@ -51,7 +51,7 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
         </div>
 
         {activeApp && (
-          <div className="absolute left-1/2 hidden max-w-[35%] -translate-x-1/2 truncate font-serif text-lg font-semibold tracking-tight text-shell-foreground md:block">
+          <div className="absolute left-1/2 hidden max-w-[40%] -translate-x-1/2 truncate font-serif text-2xl font-semibold tracking-tight text-shell-foreground md:block">
             {contextName || activeApp.name}
           </div>
         )}
