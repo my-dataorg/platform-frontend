@@ -21,12 +21,18 @@ type Props = {
 };
 
 export function ShellHeader({ user, invites, activeApp, showSearch = true }: Props) {
-  const [contextName, setContextName] = useState("");
+  const [context, setContext] = useState<{ name: string; subtitle?: string; role?: string }>({
+    name: "",
+  });
 
   useEffect(() => {
     function receiveContext(event: MessageEvent) {
-      if (event.data?.type === "education-context") {
-        setContextName(typeof event.data.name === "string" ? event.data.name : "");
+      if (event.data?.type === "app-context") {
+        setContext({
+          name: typeof event.data.name === "string" ? event.data.name : "",
+          subtitle: typeof event.data.subtitle === "string" ? event.data.subtitle : "",
+          role: typeof event.data.role === "string" ? event.data.role : "",
+        });
       }
     }
     window.addEventListener("message", receiveContext);
@@ -51,8 +57,17 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
         </div>
 
         {activeApp && (
-          <div className="absolute left-1/2 hidden max-w-[40%] -translate-x-1/2 truncate font-serif text-2xl font-semibold tracking-tight text-shell-foreground md:block">
-            {contextName || activeApp.name}
+          <div className="absolute left-1/2 hidden max-w-[40%] -translate-x-1/2 text-center md:block">
+            <p className="truncate font-serif text-2xl font-semibold tracking-tight text-shell-foreground">
+              {context.name || activeApp.name}
+            </p>
+            {(context.subtitle || context.role) && (
+              <p className="truncate text-xs text-shell-muted">
+                {context.subtitle}
+                {context.subtitle && context.role ? " · " : ""}
+                {context.role}
+              </p>
+            )}
           </div>
         )}
 
