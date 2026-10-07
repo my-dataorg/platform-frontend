@@ -97,6 +97,7 @@ function DashboardShellInner({
       <ShellHeader
         user={user}
         invites={invites}
+        showSearch={false}
         activeApp={
           activeProduct ? { slug: activeProduct.slug, name: activeProduct.name } : undefined
         }
