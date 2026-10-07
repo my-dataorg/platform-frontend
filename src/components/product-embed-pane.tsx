@@ -84,16 +84,6 @@ export function ProductEmbedPane({
 
   return (
     <div className="relative bg-background" style={{ height: `${height}px` }}>
-      <div className="absolute right-3 top-2 z-10">
-        <a
-          href={openUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="rounded-md border border-border bg-card/90 px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          Open in new tab
-        </a>
-      </div>
       {handoffFailed && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center">
           <p className="text-sm text-muted-foreground">
