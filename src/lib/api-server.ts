@@ -5,7 +5,7 @@ const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function fetchProductsAuthenticated(
   params: Record<string, string | undefined>
-): Promise<ProductList & { loadError?: string }> {
+): Promise<ProductList & { loadError?: string; unauthorized?: boolean }> {
   const session = await auth();
   const search = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
@@ -22,6 +22,15 @@ export async function fetchProductsAuthenticated(
       headers,
       cache: "no-store",
     });
+    if (res.status === 401 || res.status === 403) {
+      return {
+        items: [],
+        nextCursor: null,
+        totalApprox: 0,
+        loadError: "Session expired",
+        unauthorized: true,
+      };
+    }
     if (!res.ok) {
       console.error(`products API ${res.status} from ${API}`);
       return { items: [], nextCursor: null, totalApprox: 0, loadError: `API returned ${res.status}` };

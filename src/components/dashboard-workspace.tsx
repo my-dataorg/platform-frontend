@@ -68,6 +68,19 @@ function DashboardShellInner({
     appSlug ? subscribed.find((p) => p.slug === appSlug && p.enabled) : null;
 
   useEffect(() => {
+    if (!appSlug || activeProduct) return;
+    const callback = `${window.location.pathname}${window.location.search}`;
+    if (productsLoadError) {
+      router.replace(`/login?callbackUrl=${encodeURIComponent(callback)}`);
+      return;
+    }
+    const catalogProduct = products.find((p) => p.slug === appSlug);
+    if (!catalogProduct?.subscribed) {
+      router.replace("/marketplace");
+    }
+  }, [activeProduct, appSlug, products, productsLoadError, router]);
+
+  useEffect(() => {
     const stored = window.localStorage.getItem("mydata:recent-apps");
     const timer = window.setTimeout(() => {
       if (!stored) return;
@@ -109,10 +122,8 @@ function DashboardShellInner({
         />
       ) : appSlug ? (
         <main className="mx-auto max-w-lg px-6 py-16 text-center">
-          <p className="text-sm text-muted-foreground">
-            No active subscription for <strong>{appSlug}</strong>, or the catalog failed to load.
-          </p>
-          <Button asChild className="mt-6">
+          <p className="text-sm text-muted-foreground">Checking access…</p>
+          <Button asChild variant="outline" className="mt-6">
             <Link href="/dashboard">Back to dashboard</Link>
           </Button>
         </main>
