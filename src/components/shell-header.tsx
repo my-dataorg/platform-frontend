@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import { EducationManageInstitutesDropdown } from "@/components/education-manage-institutes-dropdown";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { UserMenu } from "@/components/user-menu";
 import type { PendingInvitation } from "@/lib/invitations";
@@ -21,7 +22,12 @@ type Props = {
 };
 
 export function ShellHeader({ user, invites, activeApp, showSearch = true }: Props) {
-  const [context, setContext] = useState<{ name: string; subtitle?: string; role?: string }>({
+  const [context, setContext] = useState<{
+    name: string;
+    subtitle?: string;
+    role?: string;
+    showManageInstitutes?: boolean;
+  }>({
     name: "",
   });
 
@@ -32,6 +38,7 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
           name: typeof event.data.name === "string" ? event.data.name : "",
           subtitle: typeof event.data.subtitle === "string" ? event.data.subtitle : "",
           role: typeof event.data.role === "string" ? event.data.role : "",
+          showManageInstitutes: Boolean(event.data.showManageInstitutes),
         });
       }
     }
@@ -86,6 +93,9 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
         )}
 
         <div className="ml-auto flex items-center gap-2">
+          {activeApp?.slug === "education" && context.showManageInstitutes && (
+            <EducationManageInstitutesDropdown />
+          )}
           <NotificationsPopover invites={invites} />
           <UserMenu name={user.name} email={user.email} shell />
         </div>
