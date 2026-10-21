@@ -13,9 +13,10 @@ import { ROLE_LABELS } from "@/lib/roles";
 
 type Props = {
   invites: PendingInvitation[];
+  shell?: boolean;
 };
 
-export function NotificationsPopover({ invites: initialInvites }: Props) {
+export function NotificationsPopover({ invites: initialInvites, shell }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [invites, setInvites] = useState(initialInvites);
@@ -54,7 +55,11 @@ export function NotificationsPopover({ invites: initialInvites }: Props) {
         <Button
           variant="ghost"
           size="icon"
-          className="relative rounded-xl border border-white/15 bg-white/10 text-shell-foreground hover:bg-white/15 hover:text-shell-foreground"
+          className={
+            shell
+              ? "relative h-8 w-8 rounded-md border border-white/15 bg-white/10 text-shell-foreground hover:bg-white/15 hover:text-shell-foreground sm:h-10 sm:w-10 sm:rounded-xl [&_svg]:!size-3.5 sm:[&_svg]:!size-4"
+              : "relative rounded-xl border border-white/15 bg-white/10 text-shell-foreground hover:bg-white/15 hover:text-shell-foreground"
+          }
           aria-label={`Notifications${count > 0 ? `, ${count} unread` : ""}`}
         >
           <Bell className="h-4 w-4" />

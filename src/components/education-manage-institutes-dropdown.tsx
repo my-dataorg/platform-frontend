@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, X } from "lucide-react";
+import { Building2, ChevronDown, X } from "lucide-react";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import {
   createEducationInstituteAction,
@@ -52,7 +52,7 @@ function Dialog({
   );
 }
 
-export function EducationManageInstitutesDropdown() {
+export function EducationManageInstitutesDropdown({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const menuRef = useRef<HTMLDivElement>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -131,10 +131,21 @@ export function EducationManageInstitutesDropdown() {
       <button
         type="button"
         onClick={() => setMenuOpen((o) => !o)}
-        className="inline-flex items-center gap-1 rounded-lg border border-white/20 px-3 py-1.5 text-sm text-shell-foreground hover:bg-white/10"
+        className="inline-flex items-center gap-0.5 rounded-md border border-white/20 px-1.5 py-1 text-shell-foreground hover:bg-white/10 sm:gap-1 sm:rounded-lg sm:px-3 sm:py-1.5 sm:text-sm"
+        title="Manage institutes"
+        aria-label="Manage institutes"
       >
-        Manage institutes
-        <ChevronDown className={`h-4 w-4 transition ${menuOpen ? "rotate-180" : ""}`} />
+        {compact ? (
+          <Building2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        ) : (
+          <>
+            Manage institutes
+            <ChevronDown className={`h-4 w-4 transition ${menuOpen ? "rotate-180" : ""}`} />
+          </>
+        )}
+        {compact && (
+          <ChevronDown className={`h-3 w-3 sm:h-3.5 sm:w-3.5 transition ${menuOpen ? "rotate-180" : ""}`} />
+        )}
       </button>
 
       {menuOpen && (
