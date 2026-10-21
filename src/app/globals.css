@@ -71,3 +71,27 @@ body {
 .font-serif {
   font-family: var(--font-source-serif), "Source Serif 4", Georgia, serif;
 }
+
+/* When a product iframe calls print(), hide the platform shell so page 1 is not blank. */
+@media print {
+  body > div > header,
+  body header {
+    display: none !important;
+  }
+
+  body iframe {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    border: 0 !important;
+  }
+
+  .h-screen,
+  .overflow-hidden {
+    height: auto !important;
+    overflow: visible !important;
+  }
+}
