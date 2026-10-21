@@ -63,13 +63,13 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
           )}
         </div>
 
-        {activeApp && (
-          <div className="absolute left-1/2 hidden max-w-[40%] -translate-x-1/2 text-center md:block">
-            <p className="truncate font-serif text-2xl font-semibold tracking-tight text-shell-foreground">
-              {context.name || activeApp.name}
+        {activeApp && context.name && (
+          <div className="min-w-0 flex-1 px-2 md:absolute md:left-1/2 md:max-w-[40%] md:-translate-x-1/2 md:px-0 md:text-center">
+            <p className="truncate text-sm font-semibold text-shell-foreground md:font-serif md:text-2xl md:tracking-tight">
+              {context.name}
             </p>
             {(context.subtitle || context.role) && (
-              <p className="truncate text-xs text-shell-muted">
+              <p className="hidden truncate text-xs text-shell-muted md:block">
                 {context.subtitle}
                 {context.subtitle && context.role ? " · " : ""}
                 {context.role}
