@@ -37,6 +37,16 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
   });
 
   useEffect(() => {
+    setContext({
+      name: "",
+      subtitle: "",
+      role: "",
+      showManageInstitutes: false,
+      showManageBusinesses: false,
+    });
+  }, [activeApp?.slug]);
+
+  useEffect(() => {
     function receiveContext(event: MessageEvent) {
       if (event.data?.type === "app-context") {
         setContext({
