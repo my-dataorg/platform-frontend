@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { businessApiBaseUrl, businessApiUnreachableDetail } from "@/lib/business-api-url";
+import { businessApiUnreachableDetail, businessBusinessUrl } from "@/lib/business-api-url";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { NextResponse } from "next/server";
 
@@ -12,7 +12,7 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
   const { id } = await params;
   try {
-    const res = await fetchWithTimeout(`${businessApiBaseUrl()}/v1/businesses/${id}`, {
+    const res = await fetchWithTimeout(businessBusinessUrl(id), {
       timeoutMs: 15_000,
       method: "DELETE",
       headers: { Authorization: `Bearer ${session.accessToken}` },

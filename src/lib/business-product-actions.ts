@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { businessApiBaseUrl } from "@/lib/business-api-url";
+import { businessBusinessesUrl, businessBusinessUrl } from "@/lib/business-api-url";
 import { revalidatePath } from "next/cache";
 import type { BusinessType } from "@/lib/business-types";
 
@@ -23,7 +23,7 @@ function detailFrom(data: unknown, fallback: string): string {
 function networkApiError(e: unknown, fallback: string): string {
   const msg = e instanceof Error ? e.message : String(e);
   if (/fetch failed|ECONNREFUSED|ENOTFOUND|ETIMEDOUT|network/i.test(msg)) {
-    return "Could not reach the Business API. Set BUSINESS_API_URL on platform-frontend (e.g. http://business-backend:8040).";
+    return "Could not reach the Business API via platform-backend. Ensure business-backend is running.";
   }
   return msg || fallback;
 }
@@ -33,7 +33,7 @@ export async function createBusinessProductAction(name: string, businessType: Bu
   if (!authz.token) return { ok: false as const, error: authz.error! };
 
   try {
-    const res = await fetch(`${businessApiBaseUrl()}/v1/businesses`, {
+    const res = await fetch(businessBusinessesUrl(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,7 +70,7 @@ export async function deleteBusinessProductAction(id: string) {
   if (!authz.token) return { ok: false as const, error: authz.error! };
 
   try {
-    const res = await fetch(`${businessApiBaseUrl()}/v1/businesses/${id}`, {
+    const res = await fetch(businessBusinessUrl(id), {
       method: "DELETE",
       headers: { Authorization: `Bearer ${authz.token}` },
     });
@@ -90,7 +90,7 @@ export async function listOwnedBusinessesProductAction() {
   if (!authz.token) return { ok: false as const, error: authz.error!, businesses: [] };
 
   try {
-    const res = await fetch(`${businessApiBaseUrl()}/v1/businesses`, {
+    const res = await fetch(businessBusinessesUrl(), {
       headers: { Authorization: `Bearer ${authz.token}` },
       cache: "no-store",
     });
