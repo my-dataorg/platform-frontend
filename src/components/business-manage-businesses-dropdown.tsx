@@ -94,18 +94,23 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
     e.preventDefault();
     setLoading(true);
     setError("");
-    const result = await createBusinessViaBff(
-      name.trim(),
-      dialog === "industry" ? "small_scale_industry" : businessType
-    );
-    setLoading(false);
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    try {
+      const result = await createBusinessViaBff(
+        name.trim(),
+        dialog === "industry" ? "small_scale_industry" : businessType
+      );
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setDialog(null);
+      setName("");
+      router.push(dashboardAppUrl("business", `/businesses/${result.business.id}`));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create business.");
+    } finally {
+      setLoading(false);
     }
-    setDialog(null);
-    setName("");
-    router.push(dashboardAppUrl("business", `/businesses/${result.business.id}`));
   }
 
   async function handleDelete(id: string, businessName: string) {

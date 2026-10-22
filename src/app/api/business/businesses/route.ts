@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { NextRequest, NextResponse } from "next/server";
 
 const API = process.env.BUSINESS_API_URL || "http://localhost:8040";
@@ -16,7 +17,8 @@ export async function GET() {
     return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
   }
   try {
-    const res = await fetch(`${API}/v1/businesses`, {
+    const res = await fetchWithTimeout(`${API}/v1/businesses`, {
+      timeoutMs: 15_000,
       headers: { Authorization: `Bearer ${session.accessToken}` },
       cache: "no-store",
     });
@@ -39,7 +41,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ detail: "Invalid JSON body" }, { status: 400 });
   }
   try {
-    const res = await fetch(`${API}/v1/businesses`, {
+    const res = await fetchWithTimeout(`${API}/v1/businesses`, {
+      timeoutMs: 15_000,
       method: "POST",
       headers: {
         "Content-Type": "application/json",

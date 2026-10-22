@@ -1,4 +1,5 @@
 import type { BusinessType } from "@/lib/business-types";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
 const BASE = "/api/business/businesses";
 
@@ -13,7 +14,7 @@ function detailFrom(data: unknown, fallback: string): string {
 
 export async function createBusinessViaBff(name: string, businessType: BusinessType) {
   try {
-    const res = await fetch(BASE, {
+    const res = await fetchWithTimeout(BASE, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
