@@ -5,10 +5,10 @@ import { useEffect, useRef, useState } from "react";
 import { Briefcase, ChevronDown, X } from "lucide-react";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import {
-  createBusinessProductAction,
-  deleteBusinessProductAction,
-  listOwnedBusinessesProductAction,
-} from "@/lib/business-product-actions";
+  createBusinessViaBff,
+  deleteBusinessViaBff,
+  listOwnedBusinessesViaBff,
+} from "@/lib/business-bff-client";
 import { BUSINESS_TYPE_OPTIONS, type BusinessType } from "@/lib/business-types";
 
 function Dialog({
@@ -81,7 +81,7 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
   }
 
   async function loadOwned() {
-    const result = await listOwnedBusinessesProductAction();
+    const result = await listOwnedBusinessesViaBff();
     if (!result.ok) {
       setError(result.error || "Could not load businesses.");
       setOwned([]);
@@ -94,7 +94,7 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
     e.preventDefault();
     setLoading(true);
     setError("");
-    const result = await createBusinessProductAction(
+    const result = await createBusinessViaBff(
       name.trim(),
       dialog === "industry" ? "small_scale_industry" : businessType
     );
@@ -106,14 +106,13 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
     setDialog(null);
     setName("");
     router.push(dashboardAppUrl("business", `/businesses/${result.business.id}`));
-    router.refresh();
   }
 
   async function handleDelete(id: string, businessName: string) {
     if (!confirm(`Delete "${businessName}"? This cannot be undone.`)) return;
     setDeletingId(id);
     setError("");
-    const result = await deleteBusinessProductAction(id);
+    const result = await deleteBusinessViaBff(id);
     setDeletingId(null);
     if (!result.ok) {
       setError(result.error);
