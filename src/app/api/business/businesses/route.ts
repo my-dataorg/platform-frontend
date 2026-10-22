@@ -1,11 +1,7 @@
 import { auth } from "@/auth";
-import { businessApiUnreachableDetail, businessBusinessesUrl } from "@/lib/business-api-url";
-import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
+import { businessApiUnreachableDetail } from "@/lib/business-api-url";
+import { fetchBusinessCollection } from "@/lib/business-bff-upstream";
 import { NextRequest, NextResponse } from "next/server";
-
-function apiUnreachable() {
-  return NextResponse.json({ detail: businessApiUnreachableDetail() }, { status: 502 });
-}
 
 export async function GET() {
   const session = await auth();
@@ -13,15 +9,15 @@ export async function GET() {
     return NextResponse.json({ detail: "Unauthorized" }, { status: 401 });
   }
   try {
-    const res = await fetchWithTimeout(businessBusinessesUrl(), {
+    const res = await fetchBusinessCollection(session.accessToken, {
       timeoutMs: 15_000,
-      headers: { Authorization: `Bearer ${session.accessToken}` },
       cache: "no-store",
     });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
-  } catch {
-    return apiUnreachable();
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : businessApiUnreachableDetail();
+    return NextResponse.json({ detail }, { status: 502 });
   }
 }
 
@@ -37,18 +33,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ detail: "Invalid JSON body" }, { status: 400 });
   }
   try {
-    const res = await fetchWithTimeout(businessBusinessesUrl(), {
+    const res = await fetchBusinessCollection(session.accessToken, {
       timeoutMs: 15_000,
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.accessToken}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
-  } catch {
-    return apiUnreachable();
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : businessApiUnreachableDetail();
+    return NextResponse.json({ detail }, { status: 502 });
   }
 }
