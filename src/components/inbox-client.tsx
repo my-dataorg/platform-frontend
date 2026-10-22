@@ -90,12 +90,23 @@ export function InboxClient() {
               )}
             </div>
             {item.link && (
-              <Link
-                href={item.link.startsWith("http") ? "/invitations" : item.link}
-                className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
-              >
-                View invitation →
-              </Link>
+              item.link.startsWith("http") ? (
+                <a
+                  href={item.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+                >
+                  Open in product →
+                </a>
+              ) : (
+                <Link
+                  href={item.link}
+                  className="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+                >
+                  View invitation →
+                </Link>
+              )
             )}
           </li>
         ))}
