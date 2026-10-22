@@ -40,7 +40,7 @@ See [platform-backend/infra/local](https://github.com/my-dataorg/platform-backen
 | `AUTH_URL` | `http://localhost:3000` |
 | `SUBSCRIPTIONS_API_URL` | `http://localhost:8002` |
 | `EDUCATION_API_URL` | `http://localhost:8010` |
-| `BUSINESS_API_URL` | `http://localhost:8040` (required for **Manage businesses → Create** in the dashboard header) |
+| `BUSINESS_API_URL` | Local: `http://127.0.0.1:8040`. Docker/production default: `http://business-backend:8040` (set in Dockerfile + compose) |
 | `KEYCLOAK_ISSUER` | `http://localhost:8080/realms/mydata` |
 
 ## Documentation

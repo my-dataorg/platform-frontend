@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
+import { businessApiBaseUrl, businessApiUnreachableDetail } from "@/lib/business-api-url";
+import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 import { NextResponse } from "next/server";
-
-const API = process.env.BUSINESS_API_URL || "http://localhost:8040";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -12,7 +12,8 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
   const { id } = await params;
   try {
-    const res = await fetch(`${API}/v1/businesses/${id}`, {
+    const res = await fetchWithTimeout(`${businessApiBaseUrl()}/v1/businesses/${id}`, {
+      timeoutMs: 15_000,
       method: "DELETE",
       headers: { Authorization: `Bearer ${session.accessToken}` },
     });
@@ -22,9 +23,6 @@ export async function DELETE(_req: Request, { params }: Params) {
     const data = await res.json().catch(() => ({}));
     return NextResponse.json(data, { status: res.status });
   } catch {
-    return NextResponse.json(
-      { detail: "Business API is unreachable. Set BUSINESS_API_URL on platform-frontend." },
-      { status: 502 }
-    );
+    return NextResponse.json({ detail: businessApiUnreachableDetail() }, { status: 502 });
   }
 }

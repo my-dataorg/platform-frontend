@@ -1,10 +1,9 @@
 "use server";
 
 import { auth } from "@/auth";
+import { businessApiBaseUrl } from "@/lib/business-api-url";
 import { revalidatePath } from "next/cache";
 import type { BusinessType } from "@/lib/business-types";
-
-const API = process.env.BUSINESS_API_URL || "http://localhost:8040";
 
 async function bearer() {
   const session = await auth();
@@ -34,7 +33,7 @@ export async function createBusinessProductAction(name: string, businessType: Bu
   if (!authz.token) return { ok: false as const, error: authz.error! };
 
   try {
-    const res = await fetch(`${API}/v1/businesses`, {
+    const res = await fetch(`${businessApiBaseUrl()}/v1/businesses`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -71,7 +70,7 @@ export async function deleteBusinessProductAction(id: string) {
   if (!authz.token) return { ok: false as const, error: authz.error! };
 
   try {
-    const res = await fetch(`${API}/v1/businesses/${id}`, {
+    const res = await fetch(`${businessApiBaseUrl()}/v1/businesses/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${authz.token}` },
     });
@@ -91,7 +90,7 @@ export async function listOwnedBusinessesProductAction() {
   if (!authz.token) return { ok: false as const, error: authz.error!, businesses: [] };
 
   try {
-    const res = await fetch(`${API}/v1/businesses`, {
+    const res = await fetch(`${businessApiBaseUrl()}/v1/businesses`, {
       headers: { Authorization: `Bearer ${authz.token}` },
       cache: "no-store",
     });
