@@ -72,10 +72,14 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
         run: |
           set -euo pipefail
+          next_file="service.env.next.platform-frontend"
           ssh -i "$HOME/.ssh/deploy_key" -o StrictHostKeyChecking=yes -o BatchMode=yes \
             "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH'"
           ssh -i "$HOME/.ssh/deploy_key" -o StrictHostKeyChecking=yes -o BatchMode=yes \
-            "$DEPLOY_USER@$DEPLOY_HOST" "cat > '$DEPLOY_PATH/service.env.next'" < service.env
+            "$DEPLOY_USER@$DEPLOY_HOST" "cat > '$DEPLOY_PATH/$next_file'" < service.env
+          ssh -i "$HOME/.ssh/deploy_key" -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            "test -s '$DEPLOY_PATH/$next_file'"
 
       - name: Pull and restart platform frontend
         env:
@@ -97,8 +101,20 @@ jobs:
           set -eu
           cd "$DEPLOY_PATH"
           export PLATFORM_FRONTEND_IMAGE="$IMAGE"
+          next_file="service.env.next.platform-frontend"
+          if [ ! -s "$next_file" ]; then
+            echo "Missing deploy override file: $next_file" >&2
+            exit 1
+          fi
           [ -f service.env ] && cp service.env service.env.previous || true
-          mv service.env.next service.env
+          if [ -f service.env ]; then
+            grep -v '^PLATFORM_FRONTEND_IMAGE=' service.env > service.env.tmp || true
+            cat "$next_file" >> service.env.tmp
+            mv service.env.tmp service.env
+          else
+            mv "$next_file" service.env
+          fi
+          rm -f "$next_file"
 
           compose() {
             args=(--env-file .env)
