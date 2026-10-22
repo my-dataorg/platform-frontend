@@ -63,7 +63,9 @@ export default async function LoginPage() {
             Enter your username and password to continue.
           </p>
           <LoginForm />
-          <p className="mt-6 text-xs text-muted-foreground">Demo: admin / admin</p>
+          {process.env.NODE_ENV !== "production" && (
+            <p className="mt-6 text-xs text-muted-foreground">Local demo: admin / admin</p>
+          )}
         </div>
       </div>
     </div>

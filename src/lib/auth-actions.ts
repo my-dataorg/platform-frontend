@@ -21,6 +21,37 @@ export async function loginWithPassword(
   if (!username || !password) {
     return { error: "Enter username and password." };
   }
+
+  let loginRes: Response;
+  try {
+    loginRes = await fetch(`${API}/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+  } catch {
+    return {
+      error:
+        "Cannot reach the platform API. On the server, check that platform-backend is running and SUBSCRIPTIONS_API_URL points to it.",
+    };
+  }
+
+  if (!loginRes.ok) {
+    const body = await loginRes.json().catch(() => ({}));
+    const detail =
+      typeof body.detail === "string"
+        ? body.detail
+        : "Invalid username or password.";
+    if (loginRes.status === 401) {
+      return {
+        error:
+          detail +
+          " On a new server, create an account with Sign up — demo admin/admin only exists if it was seeded on first install.",
+      };
+    }
+    return { error: detail || `Login failed (${loginRes.status}).` };
+  }
+
   try {
     await signIn("credentials", {
       username,
@@ -29,7 +60,7 @@ export async function loginWithPassword(
     });
   } catch (err) {
     if (err instanceof AuthError) {
-      return { error: "Invalid username or password." };
+      return { error: "Sign-in session could not be started. Check AUTH_SECRET and AUTH_URL on the server." };
     }
     throw err;
   }
