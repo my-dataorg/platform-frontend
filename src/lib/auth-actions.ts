@@ -21,6 +21,32 @@ export async function loginWithPassword(
   if (!username || !password) {
     return { error: "Enter username and password." };
   }
+
+  let loginRes: Response;
+  try {
+    loginRes = await fetch(`${API}/v1/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+  } catch {
+    return {
+      error:
+        "Cannot reach the platform API. Check that platform-backend is running and SUBSCRIPTIONS_API_URL is set correctly.",
+    };
+  }
+
+  if (!loginRes.ok) {
+    if (loginRes.status === 401) {
+      return {
+        error:
+          "Invalid username or password. Use the account you created on Sign up, or demo@mydata.local / demo1234 (admin / admin also works on fresh installs).",
+      };
+    }
+    const body = await loginRes.json().catch(() => ({}));
+    return { error: formatApiDetail(body.detail) || "Login failed. Try again." };
+  }
+
   try {
     await signIn("credentials", {
       username,
@@ -29,7 +55,10 @@ export async function loginWithPassword(
     });
   } catch (err) {
     if (err instanceof AuthError) {
-      return { error: "Invalid username or password." };
+      return {
+        error:
+          "Platform accepted your password but the session could not be created. Check AUTH_SECRET and AUTH_URL on platform-frontend.",
+      };
     }
     throw err;
   }
