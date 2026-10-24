@@ -63,7 +63,10 @@ export default async function LoginPage() {
             Enter your username and password to continue.
           </p>
           <LoginForm />
-          <p className="mt-6 text-xs text-muted-foreground">Demo: admin / admin</p>
+          <p className="mt-6 text-xs text-muted-foreground">
+            Demo: <span className="font-medium text-foreground">admin / admin</span> or{" "}
+            <span className="font-medium text-foreground">demo@mydata.local / demo1234</span>
+          </p>
         </div>
       </div>
     </div>
