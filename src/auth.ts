@@ -1,9 +1,8 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 
-const API = (
-  process.env.SUBSCRIPTIONS_API_URL || "http://127.0.0.1:8002"
-).replace("://localhost", "://127.0.0.1");
+const API = platformApiBaseUrl();
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -18,11 +17,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const password = String(credentials?.password || "");
         if (!username || !password) return null;
 
-        const res = await fetch(`${API}/v1/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
+        let res: Response;
+        try {
+          res = await fetch(`${API}/v1/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+            signal: AbortSignal.timeout(20_000),
+          });
+        } catch {
+          return null;
+        }
         if (!res.ok) return null;
         const data = await res.json();
         const user = data.user;

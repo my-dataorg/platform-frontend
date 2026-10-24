@@ -3,11 +3,9 @@
 import { signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 
-// Prefer 127.0.0.1 — Node fetch to "localhost" can fail on macOS IPv6.
-const API =
-  process.env.SUBSCRIPTIONS_API_URL?.replace("://localhost", "://127.0.0.1") ||
-  "http://127.0.0.1:8002";
+const API = platformApiBaseUrl();
 const EDUCATION_URL = process.env.EDUCATION_APP_URL || "http://localhost:3010";
 
 export type LoginState = { error?: string };
@@ -28,6 +26,7 @@ export async function loginWithPassword(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
+      signal: AbortSignal.timeout(20_000),
     });
   } catch {
     return {
