@@ -13,7 +13,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const username = String(credentials?.username || "").trim();
+        const username = String(credentials?.username || "").trim().toLowerCase();
         const password = String(credentials?.password || "");
         if (!username || !password) return null;
 

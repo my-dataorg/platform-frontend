@@ -55,6 +55,10 @@ export function LoginForm() {
           Create account
         </Link>
       </p>
+      <p className="pt-4 text-center text-xs text-muted-foreground">
+        Demo: <span className="font-medium text-foreground">admin / admin</span> or{" "}
+        <span className="font-medium text-foreground">demo@mydata.local / demo1234</span>
+      </p>
     </form>
   );
 }

@@ -14,7 +14,7 @@ export async function loginWithPassword(
   _prev: LoginState,
   formData: FormData
 ): Promise<LoginState> {
-  const username = String(formData.get("username") || "").trim();
+  const username = String(formData.get("username") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
   if (!username || !password) {
     return { error: "Enter username and password." };
