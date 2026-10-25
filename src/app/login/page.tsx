@@ -1,9 +1,16 @@
 import { auth } from "@/auth";
 import { federatedSignOut } from "@/lib/auth-actions";
+import { safeNextPath } from "@/lib/safe-next-path";
 import { LoginForm } from "@/components/login-form";
 import Link from "next/link";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
+  const nextPath = safeNextPath(callbackUrl);
   const session = await auth();
 
   if (session?.user) {
@@ -62,7 +69,7 @@ export default async function LoginPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             Enter your username and password to continue.
           </p>
-          <LoginForm />
+          <LoginForm callbackUrl={nextPath} />
           {process.env.NODE_ENV !== "production" && (
             <p className="mt-6 text-xs text-muted-foreground">Local demo: admin / admin</p>
           )}

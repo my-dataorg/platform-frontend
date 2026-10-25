@@ -44,11 +44,16 @@ export function ProductEmbedPane({
       body: JSON.stringify({ path: safePath }),
     })
       .then((response) => {
+        if (response.status === 401 || response.status === 403) {
+          const next = window.location.pathname + window.location.search;
+          window.location.assign(`/login?callbackUrl=${encodeURIComponent(next)}`);
+          return null;
+        }
         if (!response.ok) throw new Error("handoff failed");
         return response.json() as Promise<{ code?: string }>;
       })
       .then((handoff) => {
-        if (cancelled) return;
+        if (cancelled || !handoff) return;
         if (!handoff.code) throw new Error("handoff missing code");
         setHandoff({ key: handoffKey, code: handoff.code });
       })

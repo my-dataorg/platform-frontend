@@ -1,8 +1,9 @@
 "use server";
 
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { safeNextPath } from "@/lib/safe-next-path";
 
 // Prefer 127.0.0.1 — Node fetch to "localhost" can fail on macOS IPv6.
 const API =
@@ -43,20 +44,26 @@ export async function loginWithPassword(
         ? body.detail
         : "Invalid username or password.";
     if (loginRes.status === 401) {
+      const isLocal =
+        process.env.NODE_ENV === "development" ||
+        API.includes("127.0.0.1") ||
+        API.includes("localhost") ||
+        API.includes("0.0.0.0");
       return {
-        error:
-          detail +
-          " On a new server, create an account with Sign up — demo admin/admin only exists if it was seeded on first install.",
+        error: isLocal
+          ? "Invalid username or password. Local demo: username admin, password admin (lowercase, no spaces)."
+          : `${detail} On a new server, use Sign up — demo admin/admin only exists if it was seeded on first install.`,
       };
     }
     return { error: detail || `Login failed (${loginRes.status}).` };
   }
 
+  const nextPath = safeNextPath(formData.get("callbackUrl"));
   try {
     await signIn("credentials", {
       username,
       password,
-      redirectTo: "/dashboard",
+      redirectTo: nextPath,
     });
   } catch (err) {
     if (err instanceof AuthError) {
@@ -133,6 +140,76 @@ export async function signupWithProfile(
     throw err;
   }
   return {};
+}
+
+export type ProfileState = { error?: string; saved?: boolean };
+
+export type ProfileInput = {
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  gender: string;
+  dateOfBirth: string;
+  contactNumber: string;
+  whatsappAvailable: boolean;
+  addressLine1: string | null;
+  city: string | null;
+  country: string | null;
+  state: string | null;
+  preferredLanguage: string;
+};
+
+export async function updateProfile(
+  _prev: ProfileState,
+  formData: FormData
+): Promise<ProfileState> {
+  const session = await auth();
+  if (!session?.accessToken) redirect("/login?callbackUrl=/profile");
+
+  const newPassword = String(formData.get("newPassword") || "");
+  const payload: Record<string, unknown> = {
+    firstName: String(formData.get("firstName") || "").trim(),
+    lastName: String(formData.get("lastName") || "").trim(),
+    email: String(formData.get("email") || "").trim(),
+    gender: String(formData.get("gender") || ""),
+    dateOfBirth: String(formData.get("dateOfBirth") || ""),
+    contactNumber: String(formData.get("contactNumber") || "").trim(),
+    whatsappAvailable: formData.get("whatsappAvailable") === "on",
+    addressLine1: String(formData.get("addressLine1") || "").trim() || null,
+    city: String(formData.get("city") || "").trim() || null,
+    country: String(formData.get("country") || "").trim() || null,
+    state: String(formData.get("state") || "").trim() || null,
+    preferredLanguage: String(formData.get("preferredLanguage") || "en").trim() || "en",
+  };
+  if (newPassword) {
+    payload.newPassword = newPassword;
+    payload.currentPassword = String(formData.get("currentPassword") || "");
+  }
+
+  let res: Response;
+  try {
+    res = await fetch(`${API}/v1/users/me/profile`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
+    });
+  } catch {
+    return { error: "Cannot reach the platform API. Check that platform-backend is running." };
+  }
+
+  if (res.status === 401 || res.status === 403) {
+    redirect("/login?callbackUrl=/profile");
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    return { error: formatApiDetail(body.detail) };
+  }
+  return { saved: true };
 }
 
 export async function prepareLogout() {
