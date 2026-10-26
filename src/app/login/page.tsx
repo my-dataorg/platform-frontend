@@ -1,8 +1,7 @@
-import { auth } from "@/auth";
-import { federatedSignOut } from "@/lib/auth-actions";
+import { auth, signOut, validatePlatformSession } from "@/auth";
 import { safeNextPath } from "@/lib/safe-next-path";
 import { LoginForm } from "@/components/login-form";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function LoginPage({
   searchParams,
@@ -13,38 +12,14 @@ export default async function LoginPage({
   const nextPath = safeNextPath(callbackUrl);
   const session = await auth();
 
-  if (session?.user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-10 text-center shadow-md">
-          <p className="font-serif text-sm font-semibold text-primary">MyData</p>
-          <h1 className="mt-2 font-serif text-2xl font-semibold">Already signed in</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {session.user.name || session.user.email}
-          </p>
-          <Link
-            href="/dashboard"
-            className="mt-6 block w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            Continue to dashboard
-          </Link>
-          <form
-            className="mt-3"
-            action={async () => {
-              "use server";
-              await federatedSignOut();
-            }}
-          >
-            <button
-              type="submit"
-              className="w-full rounded-xl border border-border px-4 py-3 text-sm font-medium hover:bg-muted"
-            >
-              Sign in as a different user
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+  if (session?.accessToken) {
+    const valid = await validatePlatformSession(session.accessToken);
+    if (valid) {
+      redirect(nextPath);
+    }
+    await signOut({ redirect: false });
+  } else if (session?.user) {
+    await signOut({ redirect: false });
   }
 
   return (

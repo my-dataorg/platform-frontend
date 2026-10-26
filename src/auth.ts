@@ -5,6 +5,11 @@ const API = (
   process.env.SUBSCRIPTIONS_API_URL || "http://127.0.0.1:8002"
 ).replace("://localhost", "://127.0.0.1");
 
+export async function validatePlatformSession(accessToken: string): Promise<boolean> {
+  const me = await sessionUser(accessToken);
+  return me !== "invalid" && me !== "unknown";
+}
+
 async function sessionUser(accessToken: string) {
   try {
     const res = await fetch(`${API}/v1/users/me`, {
