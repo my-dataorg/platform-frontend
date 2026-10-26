@@ -106,7 +106,13 @@ function DashboardShellInner({
   );
 
   return (
-    <div className={activeProduct ? "h-screen overflow-hidden" : "min-h-screen bg-background"}>
+    <div
+      className={
+        activeProduct
+          ? "h-screen w-full max-w-full overflow-hidden"
+          : "min-h-screen w-full max-w-full overflow-x-hidden bg-background"
+      }
+    >
       <ShellHeader
         user={user}
         invites={invites}
@@ -128,19 +134,19 @@ function DashboardShellInner({
           </Button>
         </main>
       ) : (
-        <main className="mx-auto max-w-7xl flex-1 px-4 py-10 sm:px-6">
+        <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 overflow-x-hidden px-3 py-6 sm:px-6 sm:py-10">
           <PageHeader
             title={`${greeting}, ${firstName}`}
             subtitle="Overview of your subscribed apps and quick access to the marketplace."
             actions={
-              <Button asChild>
+              <Button asChild className="w-full sm:w-auto">
                 <Link href="/marketplace">Browse Marketplace</Link>
               </Button>
             }
           />
 
-          <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
-            <div>
+          <div className="grid min-w-0 w-full items-start gap-8 lg:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="min-w-0">
               {productsLoadError && (
                 <p className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                   {productsLoadError}
@@ -175,7 +181,7 @@ function DashboardShellInner({
               </div>
             </div>
 
-            <aside className="space-y-4 lg:sticky lg:top-24">
+            <aside className="min-w-0 w-full space-y-4 lg:sticky lg:top-24">
               <MetricCard
                 icon={<LayoutGrid className="h-5 w-5" />}
                 label="Subscribed apps"

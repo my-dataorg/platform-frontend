@@ -21,7 +21,7 @@ export function ProductCard({ product, onAction, onLaunch, onEdit, admin, action
   const label = actionLabel ?? (product.subscribed ? "Launch" : "Subscribe");
 
   return (
-    <article className="group flex flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+    <article className="group flex min-w-0 max-w-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
       <div className="mb-4 flex items-start justify-between">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-shell text-shell-foreground transition">
           {/* eslint-disable-next-line react-hooks/static-components */}

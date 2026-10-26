@@ -23,6 +23,11 @@ export const metadata: Metadata = {
   description: "Dashboard and marketplace for MyData products",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

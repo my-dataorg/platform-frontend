@@ -29,7 +29,7 @@ export function ModuleCard({
   );
 
   const classes = cn(
-    "block rounded-xl border border-border bg-card p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md",
+    "block min-w-0 max-w-full rounded-xl border border-border bg-card p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md",
     className
   );
 
