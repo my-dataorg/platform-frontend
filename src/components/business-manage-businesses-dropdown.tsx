@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Briefcase, ChevronDown, X } from "lucide-react";
 import { dashboardAppUrl } from "@/lib/product-embed";
+import { ContactFields } from "@/components/contact-fields";
 import {
   createBusinessProductAction,
   deleteBusinessProductAction,
   listOwnedBusinessesProductAction,
 } from "@/lib/business-product-actions";
+import { contactReady, emptyContact, type ContactInput } from "@/lib/contact";
 import { BUSINESS_TYPE_OPTIONS, type BusinessType } from "@/lib/business-types";
 
 function Dialog({
@@ -57,6 +59,7 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialog, setDialog] = useState<"create" | "industry" | "delete" | null>(null);
   const [name, setName] = useState("");
+  const [contact, setContact] = useState<ContactInput>(emptyContact);
   const [businessType, setBusinessType] = useState<BusinessType>("small_scale_industry");
   const [owned, setOwned] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState("");
@@ -96,7 +99,8 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
     setError("");
     const result = await createBusinessProductAction(
       name.trim(),
-      dialog === "industry" ? "small_scale_industry" : businessType
+      dialog === "industry" ? "small_scale_industry" : businessType,
+      contact
     );
     setLoading(false);
     if (!result.ok) {
@@ -105,6 +109,7 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
     }
     setDialog(null);
     setName("");
+    setContact(emptyContact);
     router.push(dashboardAppUrl("business", `/businesses/${result.business.id}`));
     router.refresh();
   }
@@ -168,7 +173,8 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
       >
         <form onSubmit={handleCreate}>
           <label className="text-sm font-medium" htmlFor="biz-name">
-            Business name
+            {dialog === "industry" ? "Industry name" : "Business name"}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             id="biz-name"
@@ -177,7 +183,11 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
             className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm"
             required
             minLength={2}
+            autoFocus
           />
+          <div className="mt-4">
+            <ContactFields idPrefix="shell-biz" value={contact} onChange={setContact} />
+          </div>
           {dialog !== "industry" && (
             <select
               value={businessType}
@@ -198,7 +208,7 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
             </button>
             <button
               type="submit"
-              disabled={loading || name.trim().length < 2}
+              disabled={loading || name.trim().length < 2 || !contactReady(contact)}
               className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create"}

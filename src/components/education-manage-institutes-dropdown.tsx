@@ -4,11 +4,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Building2, ChevronDown, X } from "lucide-react";
 import { dashboardAppUrl } from "@/lib/product-embed";
+import { ContactFields } from "@/components/contact-fields";
 import {
   createEducationInstituteAction,
   deleteEducationInstituteAction,
   listOwnedEducationInstitutesAction,
 } from "@/lib/education-institute-actions";
+import { contactReady, emptyContact, type ContactInput } from "@/lib/contact";
 
 type Institute = { id: string; name: string; role: string; joinCode: string };
 
@@ -58,6 +60,7 @@ export function EducationManageInstitutesDropdown({ compact = false }: { compact
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialog, setDialog] = useState<"create" | "delete" | null>(null);
   const [name, setName] = useState("");
+  const [contact, setContact] = useState<ContactInput>(emptyContact);
   const [owned, setOwned] = useState<Institute[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -98,7 +101,7 @@ export function EducationManageInstitutesDropdown({ compact = false }: { compact
     e.preventDefault();
     setLoading(true);
     setError("");
-    const result = await createEducationInstituteAction(name.trim());
+    const result = await createEducationInstituteAction(name.trim(), contact);
     setLoading(false);
     if (!result.ok) {
       setError(result.error);
@@ -106,6 +109,7 @@ export function EducationManageInstitutesDropdown({ compact = false }: { compact
     }
     setDialog(null);
     setName("");
+    setContact(emptyContact);
     router.push(dashboardAppUrl("education", `/institutes/${result.institute.id}`));
     router.refresh();
   }
@@ -163,9 +167,12 @@ export function EducationManageInstitutesDropdown({ compact = false }: { compact
       )}
 
       <Dialog open={dialog === "create"} onClose={() => setDialog(null)} title="Create institute">
+        <p className="mb-4 text-sm text-muted-foreground">
+          You will be the owner and can add sections, teachers, and students.
+        </p>
         <form onSubmit={handleCreate}>
           <label className="text-sm font-medium" htmlFor="inst-name">
-            Institute name
+            Institute name <span className="text-red-500">*</span>
           </label>
           <input
             id="inst-name"
@@ -174,13 +181,21 @@ export function EducationManageInstitutesDropdown({ compact = false }: { compact
             className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm"
             required
             minLength={2}
+            autoFocus
           />
+          <div className="mt-4">
+            <ContactFields idPrefix="shell-inst" value={contact} onChange={setContact} />
+          </div>
           {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           <div className="mt-6 flex justify-end gap-2">
             <button type="button" onClick={() => setDialog(null)} className="rounded-lg border px-4 py-2 text-sm">
               Cancel
             </button>
-            <button type="submit" disabled={loading || name.trim().length < 2} className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-60">
+            <button
+              type="submit"
+              disabled={loading || name.trim().length < 2 || !contactReady(contact)}
+              className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-60"
+            >
               {loading ? "Creating..." : "Create"}
             </button>
           </div>

@@ -21,7 +21,18 @@ function detailFrom(data: unknown, fallback: string): string {
   return fallback;
 }
 
-export async function createBusinessProductAction(name: string, businessType: BusinessType) {
+export async function createBusinessProductAction(
+  name: string,
+  businessType: BusinessType,
+  contact: {
+    contactName: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    postalCode: string;
+  }
+) {
   const authz = await bearer();
   if (!authz.token) return { ok: false as const, error: authz.error! };
 
@@ -31,7 +42,16 @@ export async function createBusinessProductAction(name: string, businessType: Bu
       "Content-Type": "application/json",
       Authorization: `Bearer ${authz.token}`,
     },
-    body: JSON.stringify({ name: name.trim(), businessType }),
+    body: JSON.stringify({
+      name: name.trim(),
+      businessType,
+      contactName: contact.contactName.trim(),
+      phone: contact.phone.trim(),
+      address: contact.address.trim(),
+      city: contact.city.trim(),
+      state: contact.state.trim(),
+      postalCode: contact.postalCode.trim(),
+    }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
