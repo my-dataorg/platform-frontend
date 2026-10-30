@@ -9,6 +9,18 @@ import {
   deleteBusinessViaBff,
   listOwnedBusinessesViaBff,
 } from "@/lib/business-bff-client";
+import { BusinessContactFields } from "@/components/business-contact-fields";
+import { BusinessIndustryProfileFields } from "@/components/business-industry-profile-fields";
+import {
+  businessContactReady,
+  emptyBusinessContact,
+  type BusinessContactInput,
+} from "@/lib/business-contact";
+import {
+  businessIndustryProfileReady,
+  emptyBusinessIndustryProfile,
+  type BusinessIndustryProfileInput,
+} from "@/lib/business-industry-profile";
 import { BUSINESS_TYPE_OPTIONS, type BusinessType } from "@/lib/business-types";
 
 function Dialog({
@@ -57,6 +69,8 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialog, setDialog] = useState<"create" | "industry" | "delete" | null>(null);
   const [name, setName] = useState("");
+  const [contact, setContact] = useState<BusinessContactInput>(emptyBusinessContact);
+  const [industry, setIndustry] = useState<BusinessIndustryProfileInput>(emptyBusinessIndustryProfile);
   const [businessType, setBusinessType] = useState<BusinessType>("small_scale_industry");
   const [owned, setOwned] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState("");
@@ -95,9 +109,12 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
     setLoading(true);
     setError("");
     try {
+      const type = dialog === "industry" ? "small_scale_industry" : businessType;
       const result = await createBusinessViaBff(
         name.trim(),
-        dialog === "industry" ? "small_scale_industry" : businessType
+        type,
+        contact,
+        type === "small_scale_industry" ? industry : undefined
       );
       if (!result.ok) {
         setError(result.error);
@@ -105,6 +122,8 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
       }
       setDialog(null);
       setName("");
+      setContact(emptyBusinessContact);
+      setIndustry(emptyBusinessIndustryProfile);
       router.push(dashboardAppUrl("business", `/businesses/${result.business.id}`));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create business.");
@@ -170,39 +189,70 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
         onClose={() => setDialog(null)}
         title={dialog === "industry" ? "Create industry" : "Create business"}
       >
-        <form onSubmit={handleCreate}>
-          <label className="text-sm font-medium" htmlFor="biz-name">
-            Business name
-          </label>
-          <input
-            id="biz-name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm"
-            required
-            minLength={2}
+        <p className="mb-4 text-sm text-muted-foreground">
+          {dialog === "industry"
+            ? "Small-scale industry unit — contact, location, and production details."
+            : "Shop or service business — contact and location."}
+        </p>
+        <form onSubmit={handleCreate} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium" htmlFor="biz-name">
+              {dialog === "industry" ? "Industry / unit name" : "Business name"}{" "}
+              <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="biz-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={dialog === "industry" ? "e.g. Sri Lakshmi Rice Mill" : "e.g. Acme Store"}
+              className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm"
+              required
+              minLength={2}
+            />
+          </div>
+          <BusinessContactFields
+            idPrefix="plat-biz"
+            value={contact}
+            onChange={setContact}
+            requireState={dialog === "industry" || businessType === "small_scale_industry"}
           />
-          {dialog !== "industry" && (
-            <select
-              value={businessType}
-              onChange={(e) => setBusinessType(e.target.value as BusinessType)}
-              className="mt-4 w-full rounded-lg border border-border px-3 py-2 text-sm"
-            >
-              {BUSINESS_TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+          {dialog === "industry" && (
+            <BusinessIndustryProfileFields idPrefix="plat-ind" value={industry} onChange={setIndustry} />
           )}
-          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
-          <div className="mt-6 flex justify-end gap-2">
+          {dialog !== "industry" && (
+            <>
+              <select
+                value={businessType}
+                onChange={(e) => setBusinessType(e.target.value as BusinessType)}
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+              >
+                {BUSINESS_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {businessType === "small_scale_industry" && (
+                <BusinessIndustryProfileFields idPrefix="plat-create-ind" value={industry} onChange={setIndustry} />
+              )}
+            </>
+          )}
+          {error && <p className="text-sm text-red-600">{error}</p>}
+          <div className="flex justify-end gap-2">
             <button type="button" onClick={() => setDialog(null)} className="rounded-lg border px-4 py-2 text-sm">
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading || name.trim().length < 2}
+              disabled={
+                loading ||
+                name.trim().length < 2 ||
+                !businessContactReady(contact, {
+                  requireState: dialog === "industry" || businessType === "small_scale_industry",
+                }) ||
+                ((dialog === "industry" || businessType === "small_scale_industry") &&
+                  !businessIndustryProfileReady(industry))
+              }
               className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-60"
             >
               {loading ? "Creating..." : "Create"}

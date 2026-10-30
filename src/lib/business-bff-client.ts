@@ -1,3 +1,5 @@
+import type { BusinessContactInput } from "@/lib/business-contact";
+import type { BusinessIndustryProfileInput } from "@/lib/business-industry-profile";
 import type { BusinessType } from "@/lib/business-types";
 import { fetchWithTimeout } from "@/lib/fetch-with-timeout";
 
@@ -12,13 +14,36 @@ function detailFrom(data: unknown, fallback: string): string {
   return fallback;
 }
 
-export async function createBusinessViaBff(name: string, businessType: BusinessType) {
+export async function createBusinessViaBff(
+  name: string,
+  businessType: BusinessType,
+  contact: BusinessContactInput,
+  industry?: BusinessIndustryProfileInput
+) {
   try {
     const res = await fetchWithTimeout(BASE, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), businessType }),
+      body: JSON.stringify({
+        name: name.trim(),
+        businessType,
+        contactName: contact.contactName.trim(),
+        phone: contact.phone.trim(),
+        address: contact.address.trim(),
+        city: contact.city.trim(),
+        state: contact.state.trim(),
+        postalCode: contact.postalCode.trim(),
+        ...(businessType === "small_scale_industry" && industry
+          ? {
+              district: industry.district.trim(),
+              manufacturingLine: industry.manufacturingLine.trim(),
+              udyamRegistration: industry.udyamRegistration.trim(),
+              gstin: industry.gstin.trim(),
+              pan: industry.pan.trim(),
+            }
+          : {}),
+      }),
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
