@@ -106,7 +106,19 @@ for id in $(docker images "${repo}" -q 2>/dev/null | sort -u); do
   [ -z "$(docker ps -aq --filter "ancestor=${id}" 2>/dev/null || true)" ] && docker rmi -f "$id" 2>/dev/null || true
 done
 
-docker pull "$IMAGE"
+pull_image() {
+  if docker pull "$IMAGE"; then
+    return 0
+  fi
+  echo "docker pull failed; clearing containerd ingest and retrying once..." >&2
+  if command -v sudo >/dev/null 2>&1; then
+    sudo rm -rf /var/lib/containerd/io.containerd.content.v1.content/ingest/* 2>/dev/null || true
+  fi
+  docker image prune -af 2>/dev/null || true
+  docker pull "$IMAGE"
+}
+
+pull_image
 remove_stale_service_container "$SERVICE"
 compose up -d --force-recreate --no-deps "$SERVICE"
 
