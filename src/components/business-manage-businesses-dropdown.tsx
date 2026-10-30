@@ -4,18 +4,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Briefcase, ChevronDown, X } from "lucide-react";
 import { dashboardAppUrl } from "@/lib/product-embed";
-import {
-  createBusinessViaBff,
-  deleteBusinessViaBff,
-  listOwnedBusinessesViaBff,
-} from "@/lib/business-bff-client";
-import { BusinessContactFields } from "@/components/business-contact-fields";
+import { ContactFields } from "@/components/contact-fields";
 import { BusinessIndustryProfileFields } from "@/components/business-industry-profile-fields";
 import {
-  businessContactReady,
-  emptyBusinessContact,
-  type BusinessContactInput,
-} from "@/lib/business-contact";
+  createBusinessProductAction,
+  deleteBusinessProductAction,
+  listOwnedBusinessesProductAction,
+} from "@/lib/business-product-actions";
+import { contactReady, emptyContact, type ContactInput } from "@/lib/contact";
 import {
   businessIndustryProfileReady,
   emptyBusinessIndustryProfile,
@@ -50,7 +46,7 @@ function Dialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <button type="button" className="absolute inset-0 bg-black/40" onClick={onClose} aria-label="Close" />
-      <div className="relative max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-card p-6 text-foreground shadow-lg">
+      <div className="relative max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-border bg-card p-6 text-foreground shadow-lg">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">{title}</h2>
           <button type="button" onClick={onClose} className="rounded-lg p-1 hover:bg-muted">
@@ -69,13 +65,16 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
   const [menuOpen, setMenuOpen] = useState(false);
   const [dialog, setDialog] = useState<"create" | "industry" | "delete" | null>(null);
   const [name, setName] = useState("");
-  const [contact, setContact] = useState<BusinessContactInput>(emptyBusinessContact);
+  const [contact, setContact] = useState<ContactInput>(emptyContact);
   const [industry, setIndustry] = useState<BusinessIndustryProfileInput>(emptyBusinessIndustryProfile);
-  const [businessType, setBusinessType] = useState<BusinessType>("small_scale_industry");
+  const [businessType, setBusinessType] = useState<BusinessType>("kirana_merchant");
   const [owned, setOwned] = useState<{ id: string; name: string }[]>([]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const isIndustry =
+    dialog === "industry" || (dialog === "create" && businessType === "small_scale_industry");
 
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
@@ -95,7 +94,7 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
   }
 
   async function loadOwned() {
-    const result = await listOwnedBusinessesViaBff();
+    const result = await listOwnedBusinessesProductAction();
     if (!result.ok) {
       setError(result.error || "Could not load businesses.");
       setOwned([]);
@@ -108,35 +107,31 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
     e.preventDefault();
     setLoading(true);
     setError("");
-    try {
-      const type = dialog === "industry" ? "small_scale_industry" : businessType;
-      const result = await createBusinessViaBff(
-        name.trim(),
-        type,
-        contact,
-        type === "small_scale_industry" ? industry : undefined
-      );
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setDialog(null);
-      setName("");
-      setContact(emptyBusinessContact);
-      setIndustry(emptyBusinessIndustryProfile);
-      router.push(dashboardAppUrl("business", `/businesses/${result.business.id}`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create business.");
-    } finally {
-      setLoading(false);
+    const type = dialog === "industry" ? "small_scale_industry" : businessType;
+    const result = await createBusinessProductAction(
+      name.trim(),
+      type,
+      contact,
+      type === "small_scale_industry" ? industry : undefined
+    );
+    setLoading(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
     }
+    setDialog(null);
+    setName("");
+    setContact(emptyContact);
+    setIndustry(emptyBusinessIndustryProfile);
+    router.push(dashboardAppUrl("business", `/businesses/${result.business.id}`));
+    router.refresh();
   }
 
   async function handleDelete(id: string, businessName: string) {
     if (!confirm(`Delete "${businessName}"? This cannot be undone.`)) return;
     setDeletingId(id);
     setError("");
-    const result = await deleteBusinessViaBff(id);
+    const result = await deleteBusinessProductAction(id);
     setDeletingId(null);
     if (!result.ok) {
       setError(result.error);
@@ -191,8 +186,8 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
       >
         <p className="mb-4 text-sm text-muted-foreground">
           {dialog === "industry"
-            ? "Small-scale industry unit — contact, location, and production details."
-            : "Shop or service business — contact and location."}
+            ? "Small-scale industry — contact, location, and production details."
+            : "Shop or service — contact and location."}
         </p>
         <form onSubmit={handleCreate} className="space-y-4">
           <div>
@@ -208,16 +203,12 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
               className="mt-2 w-full rounded-lg border border-border px-3 py-2 text-sm"
               required
               minLength={2}
+              autoFocus
             />
           </div>
-          <BusinessContactFields
-            idPrefix="plat-biz"
-            value={contact}
-            onChange={setContact}
-            requireState={dialog === "industry" || businessType === "small_scale_industry"}
-          />
+          <ContactFields idPrefix="shell-biz" value={contact} onChange={setContact} requireState={isIndustry} />
           {dialog === "industry" && (
-            <BusinessIndustryProfileFields idPrefix="plat-ind" value={industry} onChange={setIndustry} />
+            <BusinessIndustryProfileFields idPrefix="shell-ind" value={industry} onChange={setIndustry} />
           )}
           {dialog !== "industry" && (
             <>
@@ -233,7 +224,7 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
                 ))}
               </select>
               {businessType === "small_scale_industry" && (
-                <BusinessIndustryProfileFields idPrefix="plat-create-ind" value={industry} onChange={setIndustry} />
+                <BusinessIndustryProfileFields idPrefix="shell-create-ind" value={industry} onChange={setIndustry} />
               )}
             </>
           )}
@@ -247,11 +238,8 @@ export function BusinessManageBusinessesDropdown({ compact = false }: { compact?
               disabled={
                 loading ||
                 name.trim().length < 2 ||
-                !businessContactReady(contact, {
-                  requireState: dialog === "industry" || businessType === "small_scale_industry",
-                }) ||
-                ((dialog === "industry" || businessType === "small_scale_industry") &&
-                  !businessIndustryProfileReady(industry))
+                !contactReady(contact, { requireState: isIndustry }) ||
+                (isIndustry && !businessIndustryProfileReady(industry))
               }
               className="rounded-lg bg-primary px-4 py-2 text-sm text-primary-foreground disabled:opacity-60"
             >

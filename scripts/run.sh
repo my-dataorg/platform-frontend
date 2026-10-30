@@ -24,4 +24,4 @@ if [[ ! -d node_modules ]]; then
 fi
 
 echo "Starting platform-frontend on http://localhost:${PORT}"
-exec npx next dev --port "$PORT"
+exec npx next dev --hostname 0.0.0.0 --port "$PORT"

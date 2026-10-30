@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, LogOut, Mail, Store } from "lucide-react";
+import { ChevronDown, LogOut, Mail, Store, UserRound } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,6 +61,12 @@ export function UserMenu({ name, email, shell }: Props) {
           {email && <p className="truncate text-xs font-normal text-muted-foreground">{email}</p>}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/profile">
+            <UserRound />
+            Edit profile
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/marketplace">
             <Store />

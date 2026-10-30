@@ -6,11 +6,12 @@ import { loginWithPassword, type LoginState } from "@/lib/auth-actions";
 
 const initial: LoginState = {};
 
-export function LoginForm() {
+export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
   const [state, action, pending] = useActionState(loginWithPassword, initial);
 
   return (
     <form action={action} className="mt-8 space-y-4">
+      {callbackUrl ? <input type="hidden" name="callbackUrl" value={callbackUrl} /> : null}
       <div>
         <label htmlFor="username" className="mb-1.5 block text-sm font-medium">
           Username or email

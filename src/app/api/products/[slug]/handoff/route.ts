@@ -23,6 +23,9 @@ export async function POST(
     headers,
     cache: "no-store",
   });
+  if (productsResponse.status === 401 || productsResponse.status === 403) {
+    return NextResponse.json({ detail: "Session expired" }, { status: 401 });
+  }
   if (!productsResponse.ok) {
     return NextResponse.json({ detail: "Product is unavailable" }, { status: 404 });
   }

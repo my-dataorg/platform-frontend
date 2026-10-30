@@ -1,43 +1,25 @@
-import { auth } from "@/auth";
-import { federatedSignOut } from "@/lib/auth-actions";
+import { auth, signOut, validatePlatformSession } from "@/auth";
+import { safeNextPath } from "@/lib/safe-next-path";
 import { LoginForm } from "@/components/login-form";
-import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ callbackUrl?: string }>;
+}) {
+  const { callbackUrl } = await searchParams;
+  const nextPath = safeNextPath(callbackUrl);
   const session = await auth();
 
-  if (session?.user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md rounded-2xl border border-border bg-card p-10 text-center shadow-md">
-          <p className="font-serif text-sm font-semibold text-primary">MyData</p>
-          <h1 className="mt-2 font-serif text-2xl font-semibold">Already signed in</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {session.user.name || session.user.email}
-          </p>
-          <Link
-            href="/dashboard"
-            className="mt-6 block w-full rounded-xl bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:opacity-90"
-          >
-            Continue to dashboard
-          </Link>
-          <form
-            className="mt-3"
-            action={async () => {
-              "use server";
-              await federatedSignOut();
-            }}
-          >
-            <button
-              type="submit"
-              className="w-full rounded-xl border border-border px-4 py-3 text-sm font-medium hover:bg-muted"
-            >
-              Sign in as a different user
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+  if (session?.accessToken) {
+    const valid = await validatePlatformSession(session.accessToken);
+    if (valid) {
+      redirect(nextPath);
+    }
+    await signOut({ redirect: false });
+  } else if (session?.user) {
+    await signOut({ redirect: false });
   }
 
   return (
@@ -62,11 +44,10 @@ export default async function LoginPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             Enter your username and password to continue.
           </p>
-          <LoginForm />
-          <p className="mt-6 text-xs text-muted-foreground">
-            Demo: <span className="font-medium text-foreground">admin / admin</span> or{" "}
-            <span className="font-medium text-foreground">demo@mydata.local / demo1234</span>
-          </p>
+          <LoginForm callbackUrl={nextPath} />
+          {process.env.NODE_ENV !== "production" && (
+            <p className="mt-6 text-xs text-muted-foreground">Local demo: admin / admin</p>
+          )}
         </div>
       </div>
     </div>

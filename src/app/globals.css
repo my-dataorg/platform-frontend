@@ -60,7 +60,14 @@
   --radius-sm: calc(var(--radius) - 4px);
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100%;
   background: hsl(var(--background));
   color: hsl(var(--foreground));
   font-family: var(--font-geist-sans), system-ui, sans-serif;

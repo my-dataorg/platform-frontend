@@ -65,8 +65,8 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
   const AppIcon = activeApp ? productIcon(activeApp.slug) : null;
 
   return (
-    <header className="sticky top-0 z-40 bg-shell text-shell-foreground shadow-md">
-      <div className="flex h-12 min-h-12 w-full items-center gap-1 px-2 sm:h-16 sm:gap-4 sm:px-6">
+    <header className="sticky top-0 z-40 w-full max-w-full overflow-x-hidden bg-shell text-shell-foreground shadow-md">
+      <div className="flex h-12 min-h-12 w-full max-w-full items-center gap-1 px-2 sm:h-16 sm:gap-4 sm:px-6">
         <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-3">
           <Link
             href="/dashboard"

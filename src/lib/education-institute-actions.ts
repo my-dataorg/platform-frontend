@@ -13,7 +13,17 @@ async function bearer() {
   return { error: null, token: session.accessToken };
 }
 
-export async function createEducationInstituteAction(name: string) {
+export async function createEducationInstituteAction(
+  name: string,
+  contact: {
+    contactName: string;
+    phone: string;
+    address: string;
+    city: string;
+    state: string;
+    postalCode: string;
+  }
+) {
   const authz = await bearer();
   if (!authz.token) return { ok: false as const, error: authz.error! };
 
@@ -23,7 +33,15 @@ export async function createEducationInstituteAction(name: string) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${authz.token}`,
     },
-    body: JSON.stringify({ name: name.trim() }),
+    body: JSON.stringify({
+      name: name.trim(),
+      contactName: contact.contactName.trim(),
+      phone: contact.phone.trim(),
+      address: contact.address.trim(),
+      city: contact.city.trim(),
+      state: contact.state.trim(),
+      postalCode: contact.postalCode.trim(),
+    }),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {

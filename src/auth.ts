@@ -4,6 +4,27 @@ import { platformApiBaseUrl } from "@/lib/platform-api-url";
 
 const API = platformApiBaseUrl();
 
+export async function validatePlatformSession(accessToken: string): Promise<boolean> {
+  const me = await sessionUser(accessToken);
+  return me !== "invalid" && me !== "unknown";
+}
+
+async function sessionUser(accessToken: string) {
+  try {
+    const res = await fetch(`${API}/v1/users/me`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(4000),
+    });
+    if (res.status === 401 || res.status === 403) return "invalid" as const;
+    if (!res.ok) return "unknown" as const;
+    const user = (await res.json()) as { name?: string; email?: string };
+    return user;
+  } catch {
+    return "unknown" as const;
+  }
+}
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -50,6 +71,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user) {
         token.accessToken = (user as { accessToken?: string }).accessToken;
         token.userId = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        return token;
+      }
+      const accessToken = token.accessToken as string | undefined;
+      if (!accessToken) return null;
+      const me = await sessionUser(accessToken);
+      if (me === "invalid") return null;
+      if (me !== "unknown") {
+        if (me.name) token.name = me.name;
+        if (me.email) token.email = me.email;
       }
       return token;
     },
