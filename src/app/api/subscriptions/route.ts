@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { NextRequest, NextResponse } from "next/server";
-
-const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -11,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   const { productSlug } = await req.json();
   const res = await fetch(
-    `${API}/v1/users/me/subscriptions?productSlug=${productSlug}`,
+    `${platformApiBaseUrl()}/v1/users/me/subscriptions?productSlug=${productSlug}`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${session.accessToken}` },

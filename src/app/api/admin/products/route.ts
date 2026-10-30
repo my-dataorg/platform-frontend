@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { NextRequest, NextResponse } from "next/server";
-
-const API = process.env.PLATFORM_API_URL || process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 async function proxy(request: NextRequest, method: "GET" | "POST" | "PATCH") {
   const session = await auth();
@@ -10,7 +9,7 @@ async function proxy(request: NextRequest, method: "GET" | "POST" | "PATCH") {
   }
 
   const url = new URL(request.url);
-  const target = new URL(`${API}/v1/admin/products`);
+  const target = new URL(`${platformApiBaseUrl()}/v1/admin/products`);
   target.search = url.search;
   const headers: HeadersInit = { Authorization: `Bearer ${session.accessToken}` };
   if (method !== "GET") headers["Content-Type"] = "application/json";

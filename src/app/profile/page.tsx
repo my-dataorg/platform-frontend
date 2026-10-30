@@ -3,17 +3,14 @@ import { ProfileForm } from "@/components/profile-form";
 import { PageHeader } from "@/components/shell/page-header";
 import { ShellNav } from "@/components/shell-nav";
 import type { ProfileInput } from "@/lib/auth-actions";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { redirect } from "next/navigation";
-
-const API = (
-  process.env.SUBSCRIPTIONS_API_URL || "http://127.0.0.1:8002"
-).replace("://localhost", "://127.0.0.1");
 
 export default async function ProfilePage() {
   const session = await auth();
   if (!session?.accessToken) redirect("/login?callbackUrl=/profile");
 
-  const res = await fetch(`${API}/v1/users/me/profile`, {
+  const res = await fetch(`${platformApiBaseUrl()}/v1/users/me/profile`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
     cache: "no-store",
   });

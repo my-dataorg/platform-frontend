@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { NextResponse } from "next/server";
-
-const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function PATCH(
   _request: Request,
@@ -13,7 +12,7 @@ export async function PATCH(
   }
 
   const { id } = await params;
-  const res = await fetch(`${API}/v1/users/me/notifications/${id}`, {
+  const res = await fetch(`${platformApiBaseUrl()}/v1/users/me/notifications/${id}`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${session.accessToken}`,

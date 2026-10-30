@@ -2,8 +2,6 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { platformApiBaseUrl } from "@/lib/platform-api-url";
 
-const API = platformApiBaseUrl();
-
 export async function validatePlatformSession(accessToken: string): Promise<boolean> {
   const me = await sessionUser(accessToken);
   return me !== "invalid" && me !== "unknown";
@@ -11,7 +9,7 @@ export async function validatePlatformSession(accessToken: string): Promise<bool
 
 async function sessionUser(accessToken: string) {
   try {
-    const res = await fetch(`${API}/v1/users/me`, {
+    const res = await fetch(`${platformApiBaseUrl()}/v1/users/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
       signal: AbortSignal.timeout(4000),
@@ -40,7 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         let res: Response;
         try {
-          res = await fetch(`${API}/v1/auth/login`, {
+          res = await fetch(`${platformApiBaseUrl()}/v1/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),

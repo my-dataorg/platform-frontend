@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { normalizeProduct, type ProductList } from "@/lib/api";
-
-const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 
 export async function fetchProductsAuthenticated(
   params: Record<string, string | undefined>
@@ -18,7 +17,8 @@ export async function fetchProductsAuthenticated(
   }
 
   try {
-    const res = await fetch(`${API}/v1/products?${search}`, {
+    const api = platformApiBaseUrl();
+    const res = await fetch(`${api}/v1/products?${search}`, {
       headers,
       cache: "no-store",
     });
@@ -32,7 +32,7 @@ export async function fetchProductsAuthenticated(
       };
     }
     if (!res.ok) {
-      console.error(`products API ${res.status} from ${API}`);
+      console.error(`products API ${res.status} from ${api}`);
       return { items: [], nextCursor: null, totalApprox: 0, loadError: `API returned ${res.status}` };
     }
     const data = (await res.json()) as ProductList;
@@ -56,7 +56,7 @@ export async function subscribeAuthenticated(productSlug: string) {
   if (!session?.accessToken) throw new Error("Not authenticated");
 
   const res = await fetch(
-    `${API}/v1/users/me/subscriptions?productSlug=${productSlug}`,
+    `${platformApiBaseUrl()}/v1/users/me/subscriptions?productSlug=${productSlug}`,
     {
       method: "POST",
       headers: { Authorization: `Bearer ${session.accessToken}` },
