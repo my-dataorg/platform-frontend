@@ -6,10 +6,20 @@ import { redirect } from "next/navigation";
 import { safeNextPath } from "@/lib/safe-next-path";
 
 // Prefer 127.0.0.1 — Node fetch to "localhost" can fail on macOS IPv6.
-const API =
-  process.env.SUBSCRIPTIONS_API_URL?.replace("://localhost", "://127.0.0.1") ||
-  "http://127.0.0.1:8002";
+const API = (
+  process.env.SUBSCRIPTIONS_API_URL ||
+  process.env.PLATFORM_API_URL ||
+  "http://127.0.0.1:8002"
+).replace("://localhost", "://127.0.0.1");
 const EDUCATION_URL = process.env.EDUCATION_APP_URL || "http://localhost:3010";
+
+function apiUnreachableMessage(): string {
+  return (
+    `Cannot reach the platform API at ${API}. ` +
+    "Ensure platform-backend is running on the same Docker network " +
+    "(on the server: docker compose ps && docker compose logs platform-backend --tail 40)."
+  );
+}
 
 export type LoginState = { error?: string };
 
@@ -31,10 +41,7 @@ export async function loginWithPassword(
       body: JSON.stringify({ username, password }),
     });
   } catch {
-    return {
-      error:
-        "Cannot reach the platform API. On the server, check that platform-backend is running and SUBSCRIPTIONS_API_URL points to it.",
-    };
+    return { error: apiUnreachableMessage() };
   }
 
   if (!loginRes.ok) {
@@ -116,10 +123,7 @@ export async function signupWithProfile(
       body: JSON.stringify(payload),
     });
   } catch {
-    return {
-      error:
-        "Cannot reach the platform API (port 8002). Start platform-backend and try again.",
-    };
+    return { error: apiUnreachableMessage() };
   }
 
   if (!res.ok) {
@@ -199,7 +203,7 @@ export async function updateProfile(
       cache: "no-store",
     });
   } catch {
-    return { error: "Cannot reach the platform API. Check that platform-backend is running." };
+    return { error: apiUnreachableMessage() };
   }
 
   if (res.status === 401 || res.status === 403) {
