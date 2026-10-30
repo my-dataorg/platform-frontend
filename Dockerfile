@@ -14,6 +14,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
+ENV SUBSCRIPTIONS_API_URL=http://platform-backend:8002
+ENV PLATFORM_API_URL=http://platform-backend:8002
 ENV BUSINESS_API_URL=http://business-backend:8040
 ENV RUNNING_IN_DOCKER=1
 
