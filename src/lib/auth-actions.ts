@@ -12,7 +12,11 @@ function platformReachabilityError(): string {
   const api = platformApiBaseUrl();
   const inDocker = process.env.RUNNING_IN_DOCKER === "1";
   if (inDocker) {
-    return `Cannot reach the platform API at ${api}. Ensure the platform-backend container is running on the same Docker network.`;
+    return (
+      `Cannot reach the platform API at ${api}. ` +
+      "Ensure platform-backend is running on the same Docker network " +
+      "(on the server: docker compose ps && docker compose logs platform-backend --tail 40)."
+    );
   }
   return `Cannot reach the platform API at ${api}. Start platform-backend locally (port 8002) or set SUBSCRIPTIONS_API_URL.`;
 }
