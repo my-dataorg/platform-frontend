@@ -7,6 +7,8 @@ export async function validatePlatformSession(accessToken: string): Promise<bool
   return me !== "invalid" && me !== "unknown";
 }
 
+const PLATFORM_SESSION_CHECK_MS = 5 * 60 * 1000;
+
 async function sessionUser(accessToken: string) {
   try {
     const res = await fetch(`${platformApiBaseUrl()}/v1/users/me`, {
@@ -75,11 +77,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       const accessToken = token.accessToken as string | undefined;
       if (!accessToken) return null;
-      const me = await sessionUser(accessToken);
-      if (me === "invalid") return null;
-      if (me !== "unknown") {
-        if (me.name) token.name = me.name;
-        if (me.email) token.email = me.email;
+      const lastCheck = token.platformCheckedAt as number | undefined;
+      const now = Date.now();
+      if (!lastCheck || now - lastCheck > PLATFORM_SESSION_CHECK_MS) {
+        const me = await sessionUser(accessToken);
+        if (me === "invalid") return null;
+        if (me !== "unknown") {
+          if (me.name) token.name = me.name;
+          if (me.email) token.email = me.email;
+        }
+        token.platformCheckedAt = now;
       }
       return token;
     },
