@@ -25,6 +25,8 @@ export function ProductEmbedPane({
     [product.launchUrl, safePath, handoffCode, product.embedEnabled]
   );
   const [height, setHeight] = useState(600);
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
 
   useLayoutEffect(() => {
     function resize() {
@@ -64,6 +66,18 @@ export function ProductEmbedPane({
       cancelled = true;
     };
   }, [handoffKey, product.embedEnabled, product.slug, safePath]);
+
+  useEffect(() => {
+    if (!handoffCode || handoffFailed) {
+      setLoadTimedOut(false);
+      setIframeLoaded(false);
+      return;
+    }
+    setLoadTimedOut(false);
+    setIframeLoaded(false);
+    const timer = window.setTimeout(() => setLoadTimedOut(true), 25_000);
+    return () => window.clearTimeout(timer);
+  }, [handoffCode, handoffFailed, src]);
 
   const openUrl = new URL(
     `${product.launchUrl.replace(/\/$/, "")}${safePath}`
@@ -106,10 +120,32 @@ export function ProductEmbedPane({
           </a>
         </div>
       )}
+      {loadTimedOut && !iframeLoaded && handoffCode && !handoffFailed ? (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            {product.name} at{" "}
+            <span className="font-medium text-foreground">{product.launchUrl}</span> did not respond.
+            On the server, start <span className="font-medium text-foreground">{product.slug}-frontend</span>{" "}
+            (port from launch URL) and ensure the firewall allows that port.
+          </p>
+          <a
+            href={openUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Try opening in a new tab
+          </a>
+        </div>
+      ) : null}
       {handoffCode && !handoffFailed ? (
         <iframe
           title={product.name}
           src={src}
+          onLoad={() => {
+            setIframeLoaded(true);
+            setLoadTimedOut(false);
+          }}
           style={{ display: "block", width: "100%", height: "100%", border: 0 }}
           className="bg-background"
           allow="clipboard-write"
