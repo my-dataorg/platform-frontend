@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { LayoutGrid, Search } from "lucide-react";
 import { useEffect, useState } from "react";
-import { BusinessManageBusinessesDropdown } from "@/components/business-manage-businesses-dropdown";
-import { EducationManageInstitutesDropdown } from "@/components/education-manage-institutes-dropdown";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import { productHomePath } from "@/lib/product-home-path";
 import { NotificationsPopover } from "@/components/notifications-popover";
@@ -118,13 +116,7 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
           </form>
         )}
 
-        <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:gap-2">
-          {activeApp?.slug === "education" && context.showManageInstitutes && (
-            <EducationManageInstitutesDropdown compact />
-          )}
-          {activeApp?.slug === "business" && context.showManageBusinesses && (
-            <BusinessManageBusinessesDropdown compact />
-          )}
+        <div className="ml-auto flex max-w-[50%] shrink-0 items-center gap-0.5 sm:max-w-none sm:gap-2">
           <NotificationsPopover invites={invites} shell />
           <UserMenu name={user.name} email={user.email} shell />
         </div>

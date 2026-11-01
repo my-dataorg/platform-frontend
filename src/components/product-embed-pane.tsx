@@ -102,7 +102,7 @@ export function ProductEmbedPane({
   }
 
   return (
-    <div className="relative bg-background" style={{ height: `${height}px` }}>
+    <div className="relative w-full max-w-full overflow-x-hidden bg-background" style={{ height: `${height}px` }}>
       {handoffFailed && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center">
           <p className="text-sm text-muted-foreground">
