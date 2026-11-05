@@ -32,6 +32,7 @@ type BusinessJoinInboxItem = {
 type Props = {
   invites: PendingInvitation[];
   shell?: boolean;
+  activeAppSlug?: string;
 };
 
 function joinRequesterLabel(item: BusinessJoinInboxItem): string {
@@ -42,13 +43,15 @@ function joinRequesterLabel(item: BusinessJoinInboxItem): string {
   return "Member";
 }
 
-export function NotificationsPopover({ invites: initialInvites, shell }: Props) {
+export function NotificationsPopover({ invites: initialInvites, shell, activeAppSlug }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [invites, setInvites] = useState(initialInvites);
   const [platformItems, setPlatformItems] = useState<PlatformNotification[]>([]);
   const [platformUnread, setPlatformUnread] = useState(0);
   const [joinInbox, setJoinInbox] = useState<BusinessJoinInboxItem[]>([]);
+  const [iframeJoinInbox, setIframeJoinInbox] = useState<BusinessJoinInboxItem[]>([]);
+  const [iframeInboxReady, setIframeInboxReady] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const loadPlatform = useCallback(async () => {
@@ -93,9 +96,28 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
     if (open) void refreshAll();
   }, [open, refreshAll]);
 
+  useEffect(() => {
+    if (activeAppSlug !== "business") {
+      setIframeJoinInbox([]);
+      setIframeInboxReady(false);
+      return;
+    }
+    function onMessage(event: MessageEvent) {
+      if (event.data?.type !== "business-join-inbox") return;
+      const items = event.data.items;
+      setIframeJoinInbox(Array.isArray(items) ? items : []);
+      setIframeInboxReady(true);
+    }
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [activeAppSlug]);
+
+  const effectiveJoinInbox =
+    activeAppSlug === "business" && iframeInboxReady ? iframeJoinInbox : joinInbox;
+
   const platformOnly = platformItems.filter((n) => n.type !== "business.join_request.new");
   const platformOnlyUnread = platformOnly.filter((n) => !n.read).length;
-  const count = invites.length + joinInbox.length + platformOnlyUnread;
+  const count = invites.length + effectiveJoinInbox.length + platformOnlyUnread;
 
   async function accept(id: string, instituteName: string, instituteId: string) {
     const res = await fetch(`/api/invitations/${id}/accept`, {
@@ -148,7 +170,7 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
     window.location.href = dashboardAppUrl("business", path);
   }
 
-  const hasAny = joinInbox.length > 0 || invites.length > 0 || platformOnly.length > 0;
+  const hasAny = effectiveJoinInbox.length > 0 || invites.length > 0 || platformOnly.length > 0;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -165,7 +187,7 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
         >
           <Bell className="h-4 w-4" />
           {count > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 animate-pulse items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white ring-2 ring-amber-200">
               {count > 9 ? "9+" : count}
             </span>
           )}
@@ -188,7 +210,7 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">No new notifications</p>
           ) : (
             <ul className="divide-y divide-border">
-              {joinInbox.map((item) => (
+              {effectiveJoinInbox.map((item) => (
                 <li key={`join-${item.id}`}>
                   <button
                     type="button"

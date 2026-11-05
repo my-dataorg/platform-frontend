@@ -117,7 +117,7 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
         )}
 
         <div className="ml-auto flex max-w-[50%] shrink-0 items-center gap-0.5 sm:max-w-none sm:gap-2">
-          <NotificationsPopover invites={invites} shell />
+          <NotificationsPopover invites={invites} shell activeAppSlug={activeApp?.slug} />
           <UserMenu name={user.name} email={user.email} shell />
         </div>
       </div>
