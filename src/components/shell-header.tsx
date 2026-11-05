@@ -8,6 +8,7 @@ import { productHomePath } from "@/lib/product-home-path";
 import { NotificationsPopover } from "@/components/notifications-popover";
 import { UserMenu } from "@/components/user-menu";
 import { productIcon } from "@/lib/product-icons";
+import type { BusinessJoinInboxItem } from "@/lib/business-join-inbox";
 import type { PendingInvitation } from "@/lib/invitations";
 
 type Props = {
@@ -16,6 +17,7 @@ type Props = {
     email?: string | null;
   };
   invites: PendingInvitation[];
+  businessJoinInbox?: BusinessJoinInboxItem[];
   activeApp?: {
     slug: string;
     name: string;
@@ -23,7 +25,13 @@ type Props = {
   showSearch?: boolean;
 };
 
-export function ShellHeader({ user, invites, activeApp, showSearch = true }: Props) {
+export function ShellHeader({
+  user,
+  invites,
+  businessJoinInbox = [],
+  activeApp,
+  showSearch = true,
+}: Props) {
   const [context, setContext] = useState<{
     name: string;
     subtitle?: string;
@@ -117,7 +125,12 @@ export function ShellHeader({ user, invites, activeApp, showSearch = true }: Pro
         )}
 
         <div className="ml-auto flex max-w-[50%] shrink-0 items-center gap-0.5 sm:max-w-none sm:gap-2">
-          <NotificationsPopover invites={invites} shell activeAppSlug={activeApp?.slug} />
+          <NotificationsPopover
+            invites={invites}
+            initialBusinessJoinInbox={businessJoinInbox}
+            shell
+            activeAppSlug={activeApp?.slug}
+          />
           <UserMenu name={user.name} email={user.email} shell />
         </div>
       </div>

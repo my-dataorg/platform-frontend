@@ -2,6 +2,7 @@ import { fetchProductsAuthenticated } from "@/lib/api-server";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-workspace";
+import { fetchBusinessJoinInbox } from "@/lib/business-join-inbox";
 import { fetchPendingInvitations } from "@/lib/invitations";
 import { greetingForHour } from "@/lib/user-display";
 
@@ -14,9 +15,10 @@ export default async function DashboardPage({
   if (!session?.accessToken) redirect("/login");
 
   const query = await searchParams;
-  const [{ items, loadError, unauthorized }, invites] = await Promise.all([
+  const [{ items, loadError, unauthorized }, invites, businessJoinInbox] = await Promise.all([
     fetchProductsAuthenticated({ limit: "48" }),
     fetchPendingInvitations(session),
+    fetchBusinessJoinInbox(session),
   ]);
 
   if (unauthorized) {
@@ -44,6 +46,7 @@ export default async function DashboardPage({
         email: session.user?.email,
       }}
       invites={invites}
+      businessJoinInbox={businessJoinInbox}
     />
   );
 }

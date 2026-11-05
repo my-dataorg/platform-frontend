@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import { productIcon } from "@/lib/product-icons";
 import type { Product } from "@/lib/api";
+import type { BusinessJoinInboxItem } from "@/lib/business-join-inbox";
 import type { PendingInvitation } from "@/lib/invitations";
 
 type Props = {
@@ -27,6 +28,7 @@ type Props = {
     email?: string | null;
   };
   invites: PendingInvitation[];
+  businessJoinInbox?: BusinessJoinInboxItem[];
 };
 
 function DashboardLoading() {
@@ -52,6 +54,7 @@ function DashboardShellInner({
   firstName,
   user,
   invites,
+  businessJoinInbox = [],
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -116,6 +119,7 @@ function DashboardShellInner({
       <ShellHeader
         user={user}
         invites={invites}
+        businessJoinInbox={businessJoinInbox}
         showSearch={false}
         activeApp={
           activeProduct ? { slug: activeProduct.slug, name: activeProduct.name } : undefined

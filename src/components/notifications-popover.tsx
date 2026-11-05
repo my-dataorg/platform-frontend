@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import type { BusinessJoinInboxItem } from "@/lib/business-join-inbox";
 import type { PendingInvitation } from "@/lib/invitations";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -18,16 +19,6 @@ type PlatformNotification = {
   body: string;
   link?: string;
   read: boolean;
-};
-
-type BusinessJoinInboxItem = {
-  id: string;
-  businessId?: string;
-  businessName?: string | null;
-  displayName?: string | null;
-  userEmail?: string | null;
-  requestedRole: string;
-  associationPath?: string | null;
 };
 
 function mergeJoinInbox(
@@ -43,6 +34,7 @@ function mergeJoinInbox(
 
 type Props = {
   invites: PendingInvitation[];
+  initialBusinessJoinInbox?: BusinessJoinInboxItem[];
   shell?: boolean;
   activeAppSlug?: string;
 };
@@ -55,17 +47,18 @@ function joinRequesterLabel(item: BusinessJoinInboxItem): string {
   return "Member";
 }
 
-function isBusinessJoinPlatformType(type: string): boolean {
-  return type.startsWith("business.join_request");
-}
-
-export function NotificationsPopover({ invites: initialInvites, shell, activeAppSlug }: Props) {
+export function NotificationsPopover({
+  invites: initialInvites,
+  initialBusinessJoinInbox = [],
+  shell,
+  activeAppSlug,
+}: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [invites, setInvites] = useState(initialInvites);
   const [platformItems, setPlatformItems] = useState<PlatformNotification[]>([]);
   const [platformUnread, setPlatformUnread] = useState(0);
-  const [joinInbox, setJoinInbox] = useState<BusinessJoinInboxItem[]>([]);
+  const [joinInbox, setJoinInbox] = useState<BusinessJoinInboxItem[]>(initialBusinessJoinInbox);
   const [iframeJoinInbox, setIframeJoinInbox] = useState<BusinessJoinInboxItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -102,6 +95,12 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
   }, [initialInvites]);
 
   useEffect(() => {
+    if (initialBusinessJoinInbox.length > 0) {
+      setJoinInbox((prev) => mergeJoinInbox(initialBusinessJoinInbox, prev));
+    }
+  }, [initialBusinessJoinInbox]);
+
+  useEffect(() => {
     void refreshAll();
     const ms = activeAppSlug === "business" ? 10_000 : 30_000;
     const timer = window.setInterval(() => void refreshAll(), ms);
@@ -129,17 +128,19 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
 
   const effectiveJoinInbox = mergeJoinInbox(joinInbox, iframeJoinInbox);
 
-  const hasPlatformJoinAlerts = useMemo(
-    () => platformItems.some((n) => isBusinessJoinPlatformType(n.type) && !n.read),
-    [platformItems]
-  );
+  const joinInboxForList = useMemo(() => {
+    const platformJoinTitles = new Set(
+      platformItems
+        .filter((n) => n.type.startsWith("business.join_request"))
+        .map((n) => n.title.trim().toLowerCase())
+    );
+    return effectiveJoinInbox.filter((item) => {
+      const title = `join request — ${(item.businessName || "business").trim()}`.toLowerCase();
+      return !platformJoinTitles.has(title);
+    });
+  }, [effectiveJoinInbox, platformItems]);
 
-  const fallbackJoinInbox = useMemo(() => {
-    if (hasPlatformJoinAlerts) return [];
-    return effectiveJoinInbox;
-  }, [effectiveJoinInbox, hasPlatformJoinAlerts]);
-
-  const count = invites.length + platformUnread + fallbackJoinInbox.length;
+  const count = invites.length + platformUnread + joinInboxForList.length;
 
   async function accept(id: string, instituteName: string, instituteId: string) {
     const res = await fetch(`/api/invitations/${id}/accept`, {
@@ -205,7 +206,7 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
   }
 
   const hasAny =
-    platformItems.length > 0 || fallbackJoinInbox.length > 0 || invites.length > 0;
+    platformItems.length > 0 || joinInboxForList.length > 0 || invites.length > 0;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -264,7 +265,7 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
                   </button>
                 </li>
               ))}
-              {fallbackJoinInbox.map((item) => (
+              {joinInboxForList.map((item) => (
                 <li key={`join-${item.id}`}>
                   <button
                     type="button"
