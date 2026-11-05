@@ -22,12 +22,24 @@ type PlatformNotification = {
 
 type BusinessJoinInboxItem = {
   id: string;
+  businessId?: string;
   businessName?: string | null;
   displayName?: string | null;
   userEmail?: string | null;
   requestedRole: string;
   associationPath?: string | null;
 };
+
+function mergeJoinInbox(
+  a: BusinessJoinInboxItem[],
+  b: BusinessJoinInboxItem[]
+): BusinessJoinInboxItem[] {
+  const map = new Map<string, BusinessJoinInboxItem>();
+  for (const item of [...a, ...b]) {
+    map.set(item.id, item);
+  }
+  return [...map.values()];
+}
 
 type Props = {
   invites: PendingInvitation[];
@@ -51,7 +63,6 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
   const [platformUnread, setPlatformUnread] = useState(0);
   const [joinInbox, setJoinInbox] = useState<BusinessJoinInboxItem[]>([]);
   const [iframeJoinInbox, setIframeJoinInbox] = useState<BusinessJoinInboxItem[]>([]);
-  const [iframeInboxReady, setIframeInboxReady] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const loadPlatform = useCallback(async () => {
@@ -88,9 +99,10 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
 
   useEffect(() => {
     void refreshAll();
-    const timer = window.setInterval(() => void refreshAll(), 30_000);
+    const ms = activeAppSlug === "business" ? 10_000 : 30_000;
+    const timer = window.setInterval(() => void refreshAll(), ms);
     return () => window.clearInterval(timer);
-  }, [refreshAll]);
+  }, [refreshAll, activeAppSlug]);
 
   useEffect(() => {
     if (open) void refreshAll();
@@ -99,21 +111,19 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
   useEffect(() => {
     if (activeAppSlug !== "business") {
       setIframeJoinInbox([]);
-      setIframeInboxReady(false);
       return;
     }
     function onMessage(event: MessageEvent) {
       if (event.data?.type !== "business-join-inbox") return;
+      if (event.data.ok === false) return;
       const items = event.data.items;
       setIframeJoinInbox(Array.isArray(items) ? items : []);
-      setIframeInboxReady(true);
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
   }, [activeAppSlug]);
 
-  const effectiveJoinInbox =
-    activeAppSlug === "business" && iframeInboxReady ? iframeJoinInbox : joinInbox;
+  const effectiveJoinInbox = mergeJoinInbox(joinInbox, iframeJoinInbox);
 
   const platformOnly = platformItems.filter((n) => n.type !== "business.join_request.new");
   const platformOnlyUnread = platformOnly.filter((n) => !n.read).length;
@@ -166,7 +176,9 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
 
   function openJoinRequest(item: BusinessJoinInboxItem) {
     setOpen(false);
-    const path = item.associationPath || `/businesses/${item.id}/association?memberTab=requests`;
+    const path =
+      item.associationPath ||
+      `/businesses/${item.businessId}/association?memberTab=requests`;
     window.location.href = dashboardAppUrl("business", path);
   }
 
