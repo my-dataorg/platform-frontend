@@ -1,4 +1,4 @@
-import { auth, signOut, validatePlatformSession } from "@/auth";
+import { auth, validatePlatformSession } from "@/auth";
 import { safeNextPath } from "@/lib/safe-next-path";
 import { LoginForm } from "@/components/login-form";
 import { redirect } from "next/navigation";
@@ -17,9 +17,6 @@ export default async function LoginPage({
     if (valid) {
       redirect(nextPath);
     }
-    await signOut({ redirect: false });
-  } else if (session?.user) {
-    await signOut({ redirect: false });
   }
 
   return (

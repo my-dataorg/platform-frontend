@@ -26,6 +26,7 @@ async function sessionUser(accessToken: string) {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  trustHost: true,
   providers: [
     Credentials({
       name: "Credentials",
@@ -76,12 +77,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
       const accessToken = token.accessToken as string | undefined;
-      if (!accessToken) return null;
+      if (!accessToken) return token;
       const lastCheck = token.platformCheckedAt as number | undefined;
       const now = Date.now();
       if (!lastCheck || now - lastCheck > PLATFORM_SESSION_CHECK_MS) {
         const me = await sessionUser(accessToken);
-        if (me === "invalid") return null;
+        if (me === "invalid") {
+          delete token.accessToken;
+          delete token.userId;
+          delete token.platformCheckedAt;
+          return token;
+        }
         if (me !== "unknown") {
           if (me.name) token.name = me.name;
           if (me.email) token.email = me.email;
@@ -91,7 +97,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken as string | undefined;
+      const accessToken = token.accessToken as string | undefined;
+      if (!accessToken) {
+        return { ...session, user: undefined, expires: new Date(0).toISOString() };
+      }
+      session.accessToken = accessToken;
       if (session.user) {
         session.user.id = (token.userId ?? token.sub) as string;
       }
