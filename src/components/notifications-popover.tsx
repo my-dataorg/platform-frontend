@@ -20,10 +20,27 @@ type PlatformNotification = {
   read: boolean;
 };
 
+type BusinessJoinInboxItem = {
+  id: string;
+  businessName?: string | null;
+  displayName?: string | null;
+  userEmail?: string | null;
+  requestedRole: string;
+  associationPath?: string | null;
+};
+
 type Props = {
   invites: PendingInvitation[];
   shell?: boolean;
 };
+
+function joinRequesterLabel(item: BusinessJoinInboxItem): string {
+  const name = item.displayName?.trim();
+  if (name) return name;
+  const email = item.userEmail?.trim();
+  if (email) return email;
+  return "Member";
+}
 
 export function NotificationsPopover({ invites: initialInvites, shell }: Props) {
   const router = useRouter();
@@ -31,6 +48,7 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
   const [invites, setInvites] = useState(initialInvites);
   const [platformItems, setPlatformItems] = useState<PlatformNotification[]>([]);
   const [platformUnread, setPlatformUnread] = useState(0);
+  const [joinInbox, setJoinInbox] = useState<BusinessJoinInboxItem[]>([]);
   const [toast, setToast] = useState<string | null>(null);
 
   const loadPlatform = useCallback(async () => {
@@ -44,21 +62,40 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
     setPlatformUnread(data.unreadCount ?? 0);
   }, []);
 
+  const loadJoinInbox = useCallback(async () => {
+    const res = await fetch("/api/business/join-request-inbox", {
+      credentials: "include",
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      setJoinInbox([]);
+      return;
+    }
+    const data = (await res.json()) as BusinessJoinInboxItem[];
+    setJoinInbox(Array.isArray(data) ? data : []);
+  }, []);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.all([loadPlatform(), loadJoinInbox()]);
+  }, [loadPlatform, loadJoinInbox]);
+
   useEffect(() => {
     setInvites(initialInvites);
   }, [initialInvites]);
 
   useEffect(() => {
-    void loadPlatform();
-    const timer = window.setInterval(() => void loadPlatform(), 60_000);
+    void refreshAll();
+    const timer = window.setInterval(() => void refreshAll(), 30_000);
     return () => window.clearInterval(timer);
-  }, [loadPlatform]);
+  }, [refreshAll]);
 
   useEffect(() => {
-    if (open) void loadPlatform();
-  }, [open, loadPlatform]);
+    if (open) void refreshAll();
+  }, [open, refreshAll]);
 
-  const count = invites.length + platformUnread;
+  const platformOnly = platformItems.filter((n) => n.type !== "business.join_request.new");
+  const platformOnlyUnread = platformOnly.filter((n) => !n.read).length;
+  const count = invites.length + joinInbox.length + platformOnlyUnread;
 
   async function accept(id: string, instituteName: string, instituteId: string) {
     const res = await fetch(`/api/invitations/${id}/accept`, {
@@ -105,6 +142,14 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
     }
   }
 
+  function openJoinRequest(item: BusinessJoinInboxItem) {
+    setOpen(false);
+    const path = item.associationPath || `/businesses/${item.id}/association?memberTab=requests`;
+    window.location.href = dashboardAppUrl("business", path);
+  }
+
+  const hasAny = joinInbox.length > 0 || invites.length > 0 || platformOnly.length > 0;
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -139,11 +184,33 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
         )}
 
         <div className="max-h-80 overflow-y-auto">
-          {platformItems.length === 0 && invites.length === 0 ? (
+          {!hasAny ? (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">No new notifications</p>
           ) : (
             <ul className="divide-y divide-border">
-              {platformItems.map((item) => (
+              {joinInbox.map((item) => (
+                <li key={`join-${item.id}`}>
+                  <button
+                    type="button"
+                    onClick={() => openJoinRequest(item)}
+                    className="w-full bg-primary/5 px-4 py-3 text-left hover:bg-muted/50"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">
+                          Join request — {item.businessName || "Business"}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {joinRequesterLabel(item)} wants to join as{" "}
+                          {ROLE_LABELS[item.requestedRole] || item.requestedRole}
+                        </p>
+                      </div>
+                      <Badge variant="secondary">New</Badge>
+                    </div>
+                  </button>
+                </li>
+              ))}
+              {platformOnly.map((item) => (
                 <li key={item.id}>
                   <button
                     type="button"
