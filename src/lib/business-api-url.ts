@@ -66,8 +66,18 @@ export function businessApiUnreachableDetail(): string {
   return `Cannot reach Business API (${businessBusinessesUrl()}). Start platform-backend and business-backend, then redeploy platform-frontend.`;
 }
 
-/** User-scoped business routes (not proxied under /v1/business gateway). */
+/** User-scoped business routes (direct business-backend). */
 export function businessDirectUserApiUrl(path: string): string {
   const suffix = path.startsWith("/") ? path : `/${path}`;
   return `${directBusinessApiBase()}${suffix}`;
+}
+
+/** Join-request inbox: gateway first in prod, then direct (same pattern as businesses list). */
+export function businessJoinRequestInboxUpstreamUrls(): string[] {
+  const direct = businessDirectUserApiUrl("/v1/users/me/join-request-inbox");
+  if (useBusinessGateway()) {
+    const gateway = `${platformApiBase()}/v1/business/users/me/join-request-inbox`;
+    if (gateway !== direct) return [gateway, direct];
+  }
+  return [direct];
 }

@@ -78,12 +78,10 @@ export function NotificationsPopover({
       credentials: "include",
       cache: "no-store",
     });
-    if (!res.ok) {
-      setJoinInbox([]);
-      return;
-    }
+    if (!res.ok) return;
     const data = (await res.json()) as BusinessJoinInboxItem[];
-    setJoinInbox(Array.isArray(data) ? data : []);
+    if (!Array.isArray(data)) return;
+    setJoinInbox((prev) => mergeJoinInbox(data, prev));
   }, []);
 
   const refreshAll = useCallback(async () => {
@@ -223,7 +221,7 @@ export function NotificationsPopover({
         >
           <Bell className="h-4 w-4" />
           {count > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white ring-2 ring-amber-200">
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground ring-2 ring-white/30">
               {count > 9 ? "9+" : count}
             </span>
           )}
