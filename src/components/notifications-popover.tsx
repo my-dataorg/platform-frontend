@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -53,6 +53,10 @@ function joinRequesterLabel(item: BusinessJoinInboxItem): string {
   const email = item.userEmail?.trim();
   if (email) return email;
   return "Member";
+}
+
+function isBusinessJoinPlatformType(type: string): boolean {
+  return type.startsWith("business.join_request");
 }
 
 export function NotificationsPopover({ invites: initialInvites, shell, activeAppSlug }: Props) {
@@ -125,9 +129,17 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
 
   const effectiveJoinInbox = mergeJoinInbox(joinInbox, iframeJoinInbox);
 
-  const platformOnly = platformItems.filter((n) => n.type !== "business.join_request.new");
-  const platformOnlyUnread = platformOnly.filter((n) => !n.read).length;
-  const count = invites.length + effectiveJoinInbox.length + platformOnlyUnread;
+  const hasPlatformJoinAlerts = useMemo(
+    () => platformItems.some((n) => isBusinessJoinPlatformType(n.type) && !n.read),
+    [platformItems]
+  );
+
+  const fallbackJoinInbox = useMemo(() => {
+    if (hasPlatformJoinAlerts) return [];
+    return effectiveJoinInbox;
+  }, [effectiveJoinInbox, hasPlatformJoinAlerts]);
+
+  const count = invites.length + platformUnread + fallbackJoinInbox.length;
 
   async function accept(id: string, instituteName: string, instituteId: string) {
     const res = await fetch(`/api/invitations/${id}/accept`, {
@@ -151,6 +163,28 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
     router.refresh();
   }
 
+  function followLink(link: string) {
+    let path = link;
+    if (link.startsWith("http")) {
+      try {
+        const url = new URL(link);
+        path = `${url.pathname}${url.search}`;
+      } catch {
+        window.location.href = link;
+        return;
+      }
+    }
+    if (path.includes("/businesses/")) {
+      window.location.href = dashboardAppUrl("business", path);
+      return;
+    }
+    if (path.includes("/institutes/")) {
+      window.location.href = dashboardAppUrl("education", path);
+      return;
+    }
+    window.location.href = path;
+  }
+
   async function openPlatformNotification(item: PlatformNotification) {
     await fetch(`/api/notifications/${item.id}/read`, {
       method: "PATCH",
@@ -159,19 +193,7 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
     setPlatformItems((prev) => prev.map((n) => (n.id === item.id ? { ...n, read: true } : n)));
     setPlatformUnread((c) => Math.max(0, c - 1));
     setOpen(false);
-    if (item.link) {
-      if (item.link.startsWith("http")) {
-        try {
-          const url = new URL(item.link);
-          window.location.href = `${url.pathname}${url.search}`;
-          return;
-        } catch {
-          window.location.href = item.link;
-          return;
-        }
-      }
-      window.location.href = item.link;
-    }
+    if (item.link) followLink(item.link);
   }
 
   function openJoinRequest(item: BusinessJoinInboxItem) {
@@ -182,7 +204,8 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
     window.location.href = dashboardAppUrl("business", path);
   }
 
-  const hasAny = effectiveJoinInbox.length > 0 || invites.length > 0 || platformOnly.length > 0;
+  const hasAny =
+    platformItems.length > 0 || fallbackJoinInbox.length > 0 || invites.length > 0;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -199,7 +222,7 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
         >
           <Bell className="h-4 w-4" />
           {count > 0 && (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 animate-pulse items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white ring-2 ring-amber-200">
+            <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-white ring-2 ring-amber-200">
               {count > 9 ? "9+" : count}
             </span>
           )}
@@ -222,7 +245,26 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">No new notifications</p>
           ) : (
             <ul className="divide-y divide-border">
-              {effectiveJoinInbox.map((item) => (
+              {platformItems.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => void openPlatformNotification(item)}
+                    className={`w-full px-4 py-3 text-left hover:bg-muted/50 ${!item.read ? "bg-primary/5" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">{item.title}</p>
+                        {item.body && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">{item.body}</p>
+                        )}
+                      </div>
+                      {!item.read && <Badge variant="secondary">New</Badge>}
+                    </div>
+                  </button>
+                </li>
+              ))}
+              {fallbackJoinInbox.map((item) => (
                 <li key={`join-${item.id}`}>
                   <button
                     type="button"
@@ -240,25 +282,6 @@ export function NotificationsPopover({ invites: initialInvites, shell, activeApp
                         </p>
                       </div>
                       <Badge variant="secondary">New</Badge>
-                    </div>
-                  </button>
-                </li>
-              ))}
-              {platformOnly.map((item) => (
-                <li key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => void openPlatformNotification(item)}
-                    className={`w-full px-4 py-3 text-left hover:bg-muted/50 ${!item.read ? "bg-primary/5" : ""}`}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <p className="text-sm font-medium">{item.title}</p>
-                        {item.body && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">{item.body}</p>
-                        )}
-                      </div>
-                      {!item.read && <Badge variant="secondary">New</Badge>}
                     </div>
                   </button>
                 </li>
