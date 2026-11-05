@@ -3,13 +3,22 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { PendingInvitation } from "@/lib/invitations";
 import { dashboardAppUrl } from "@/lib/product-embed";
 import { ROLE_LABELS } from "@/lib/roles";
+
+type PlatformNotification = {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  link?: string;
+  read: boolean;
+};
 
 type Props = {
   invites: PendingInvitation[];
@@ -20,12 +29,36 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [invites, setInvites] = useState(initialInvites);
+  const [platformItems, setPlatformItems] = useState<PlatformNotification[]>([]);
+  const [platformUnread, setPlatformUnread] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
-  const count = invites.length;
+
+  const loadPlatform = useCallback(async () => {
+    const res = await fetch("/api/notifications", { credentials: "include", cache: "no-store" });
+    if (!res.ok) return;
+    const data = (await res.json()) as {
+      items?: PlatformNotification[];
+      unreadCount?: number;
+    };
+    setPlatformItems(data.items ?? []);
+    setPlatformUnread(data.unreadCount ?? 0);
+  }, []);
 
   useEffect(() => {
     setInvites(initialInvites);
   }, [initialInvites]);
+
+  useEffect(() => {
+    void loadPlatform();
+    const timer = window.setInterval(() => void loadPlatform(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [loadPlatform]);
+
+  useEffect(() => {
+    if (open) void loadPlatform();
+  }, [open, loadPlatform]);
+
+  const count = invites.length + platformUnread;
 
   async function accept(id: string, instituteName: string, instituteId: string) {
     const res = await fetch(`/api/invitations/${id}/accept`, {
@@ -47,6 +80,29 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
     });
     setInvites((prev) => prev.filter((invite) => invite.id !== id));
     router.refresh();
+  }
+
+  async function openPlatformNotification(item: PlatformNotification) {
+    await fetch(`/api/notifications/${item.id}/read`, {
+      method: "PATCH",
+      credentials: "include",
+    });
+    setPlatformItems((prev) => prev.map((n) => (n.id === item.id ? { ...n, read: true } : n)));
+    setPlatformUnread((c) => Math.max(0, c - 1));
+    setOpen(false);
+    if (item.link) {
+      if (item.link.startsWith("http")) {
+        try {
+          const url = new URL(item.link);
+          window.location.href = `${url.pathname}${url.search}`;
+          return;
+        } catch {
+          window.location.href = item.link;
+          return;
+        }
+      }
+      window.location.href = item.link;
+    }
   }
 
   return (
@@ -73,7 +129,7 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
       <PopoverContent className="w-80 p-0">
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-semibold">Notifications</p>
-          <p className="text-xs text-muted-foreground">Institute invitations and updates</p>
+          <p className="text-xs text-muted-foreground">Invitations, join requests, and updates</p>
         </div>
 
         {toast && (
@@ -83,10 +139,29 @@ export function NotificationsPopover({ invites: initialInvites, shell }: Props) 
         )}
 
         <div className="max-h-80 overflow-y-auto">
-          {invites.length === 0 ? (
+          {platformItems.length === 0 && invites.length === 0 ? (
             <p className="px-4 py-8 text-center text-sm text-muted-foreground">No new notifications</p>
           ) : (
             <ul className="divide-y divide-border">
+              {platformItems.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => void openPlatformNotification(item)}
+                    className={`w-full px-4 py-3 text-left hover:bg-muted/50 ${!item.read ? "bg-primary/5" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">{item.title}</p>
+                        {item.body && (
+                          <p className="mt-0.5 text-xs text-muted-foreground">{item.body}</p>
+                        )}
+                      </div>
+                      {!item.read && <Badge variant="secondary">New</Badge>}
+                    </div>
+                  </button>
+                </li>
+              ))}
               {invites.map((invite) => (
                 <li key={invite.id} className="px-4 py-3">
                   <div className="flex items-start justify-between gap-2">
