@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { NextResponse } from "next/server";
-
-const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function GET() {
   const session = await auth();
@@ -9,7 +8,7 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const res = await fetch(`${API}/v1/users/me/notifications`, {
+  const res = await fetch(`${platformApiBaseUrl()}/v1/users/me/notifications`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
     cache: "no-store",
   });

@@ -45,10 +45,12 @@ export function ContactFields({
   idPrefix,
   value,
   onChange,
+  requireState = false,
 }: {
   idPrefix: string;
   value: ContactInput;
   onChange: (next: ContactInput | ((current: ContactInput) => ContactInput)) => void;
+  requireState?: boolean;
 }) {
   function set(key: keyof ContactInput, next: string) {
     onChange((current) => ({ ...current, [key]: next }));
@@ -92,6 +94,7 @@ export function ContactFields({
       <Field
         id={`${idPrefix}-state`}
         label="State"
+        required={requireState}
         value={value.state}
         onChange={(next) => set("state", next)}
         autoComplete="address-level1"

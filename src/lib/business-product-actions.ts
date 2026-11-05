@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import type { BusinessIndustryProfileInput } from "@/lib/business-industry-profile";
 import type { BusinessType } from "@/lib/business-types";
 
 const API = process.env.BUSINESS_API_URL || "http://localhost:8040";
@@ -31,7 +32,8 @@ export async function createBusinessProductAction(
     city: string;
     state: string;
     postalCode: string;
-  }
+  },
+  industry?: BusinessIndustryProfileInput
 ) {
   const authz = await bearer();
   if (!authz.token) return { ok: false as const, error: authz.error! };
@@ -51,6 +53,15 @@ export async function createBusinessProductAction(
       city: contact.city.trim(),
       state: contact.state.trim(),
       postalCode: contact.postalCode.trim(),
+      ...(businessType === "small_scale_industry" && industry
+        ? {
+            district: industry.district.trim(),
+            manufacturingLine: industry.manufacturingLine.trim(),
+            udyamRegistration: industry.udyamRegistration.trim(),
+            gstin: industry.gstin.trim(),
+            pan: industry.pan.trim(),
+          }
+        : {}),
     }),
   });
   const data = await res.json().catch(() => ({}));

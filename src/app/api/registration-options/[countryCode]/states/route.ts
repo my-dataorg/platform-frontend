@@ -1,6 +1,5 @@
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { NextResponse } from "next/server";
-
-const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function GET(
   _: Request,
@@ -9,7 +8,7 @@ export async function GET(
   const { countryCode } = await params;
   try {
     const response = await fetch(
-      `${API}/v1/auth/registration-options/${encodeURIComponent(countryCode)}/states`,
+      `${platformApiBaseUrl()}/v1/auth/registration-options/${encodeURIComponent(countryCode)}/states`,
       { cache: "no-store" },
     );
     const data = await response.json().catch(() => ({}));

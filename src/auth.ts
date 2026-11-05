@@ -1,18 +1,17 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-
-const API = (
-  process.env.SUBSCRIPTIONS_API_URL || "http://127.0.0.1:8002"
-).replace("://localhost", "://127.0.0.1");
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 
 export async function validatePlatformSession(accessToken: string): Promise<boolean> {
   const me = await sessionUser(accessToken);
   return me !== "invalid" && me !== "unknown";
 }
 
+const PLATFORM_SESSION_CHECK_MS = 5 * 60 * 1000;
+
 async function sessionUser(accessToken: string) {
   try {
-    const res = await fetch(`${API}/v1/users/me`, {
+    const res = await fetch(`${platformApiBaseUrl()}/v1/users/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
       cache: "no-store",
       signal: AbortSignal.timeout(4000),
@@ -35,15 +34,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const username = String(credentials?.username || "").trim();
+        const username = String(credentials?.username || "").trim().toLowerCase();
         const password = String(credentials?.password || "");
         if (!username || !password) return null;
 
-        const res = await fetch(`${API}/v1/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, password }),
-        });
+        let res: Response;
+        try {
+          res = await fetch(`${platformApiBaseUrl()}/v1/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+            signal: AbortSignal.timeout(20_000),
+          });
+        } catch {
+          return null;
+        }
         if (!res.ok) return null;
         const data = await res.json();
         const user = data.user;
@@ -72,11 +77,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       const accessToken = token.accessToken as string | undefined;
       if (!accessToken) return null;
-      const me = await sessionUser(accessToken);
-      if (me === "invalid") return null;
-      if (me !== "unknown") {
-        if (me.name) token.name = me.name;
-        if (me.email) token.email = me.email;
+      const lastCheck = token.platformCheckedAt as number | undefined;
+      const now = Date.now();
+      if (!lastCheck || now - lastCheck > PLATFORM_SESSION_CHECK_MS) {
+        const me = await sessionUser(accessToken);
+        if (me === "invalid") return null;
+        if (me !== "unknown") {
+          if (me.name) token.name = me.name;
+          if (me.email) token.email = me.email;
+        }
+        token.platformCheckedAt = now;
       }
       return token;
     },

@@ -1,5 +1,6 @@
 import type { Product } from "@/lib/api";
 import { auth } from "@/auth";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 
 export type AdminProduct = Product & {
   status: "enabled" | "disabled";
@@ -63,7 +64,7 @@ export async function fetchAdminProducts(): Promise<AdminProductsResult> {
   const session = await auth();
   if (!session?.accessToken) return { authorized: false, products: [] };
 
-  const api = process.env.PLATFORM_API_URL || process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
+  const api = platformApiBaseUrl();
   const response = await fetch(`${api}/v1/admin/products`, {
     headers: { Authorization: `Bearer ${session.accessToken}` },
     cache: "no-store",

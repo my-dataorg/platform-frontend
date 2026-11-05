@@ -1,9 +1,8 @@
 import { auth } from "@/auth";
 import { normalizeProduct, type ProductList } from "@/lib/api";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { safeProductPath } from "@/lib/product-embed";
 import { NextRequest, NextResponse } from "next/server";
-
-const API = process.env.PLATFORM_API_URL || process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function POST(
   request: NextRequest,
@@ -19,7 +18,8 @@ export async function POST(
   const path = safeProductPath(body.path);
   const headers = { Authorization: `Bearer ${session.accessToken}` };
 
-  const productsResponse = await fetch(`${API}/v1/products?limit=48`, {
+  const api = platformApiBaseUrl();
+  const productsResponse = await fetch(`${api}/v1/products?limit=48`, {
     headers,
     cache: "no-store",
   });
@@ -45,7 +45,7 @@ export async function POST(
     return NextResponse.json({ detail: "Product launch URL is invalid" }, { status: 502 });
   }
 
-  const handoffResponse = await fetch(`${API}/v1/products/handoff`, {
+  const handoffResponse = await fetch(`${api}/v1/products/handoff`, {
     method: "POST",
     headers: { ...headers, "Content-Type": "application/json" },
     body: JSON.stringify({ productSlug: slug, targetOrigin, returnPath: path }),

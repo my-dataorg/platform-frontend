@@ -1,8 +1,7 @@
 import { auth } from "@/auth";
 import { normalizeProduct } from "@/lib/api";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { NextRequest, NextResponse } from "next/server";
-
-const API = process.env.SUBSCRIPTIONS_API_URL || "http://localhost:8002";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -14,7 +13,7 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const qs = url.searchParams.toString();
   try {
-    const res = await fetch(`${API}/v1/products?${qs}`, { headers, cache: "no-store" });
+    const res = await fetch(`${platformApiBaseUrl()}/v1/products?${qs}`, { headers, cache: "no-store" });
     const data = await res.json().catch(() => ({}));
     if (Array.isArray(data.items)) {
       data.items = data.items.map(normalizeProduct);

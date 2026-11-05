@@ -3,22 +3,22 @@
 import { auth, signIn, signOut } from "@/auth";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
+import { platformApiBaseUrl } from "@/lib/platform-api-url";
 import { safeNextPath } from "@/lib/safe-next-path";
 
-// Prefer 127.0.0.1 — Node fetch to "localhost" can fail on macOS IPv6.
-const API = (
-  process.env.SUBSCRIPTIONS_API_URL ||
-  process.env.PLATFORM_API_URL ||
-  "http://127.0.0.1:8002"
-).replace("://localhost", "://127.0.0.1");
 const EDUCATION_URL = process.env.EDUCATION_APP_URL || "http://localhost:3010";
 
-function apiUnreachableMessage(): string {
-  return (
-    `Cannot reach the platform API at ${API}. ` +
-    "Ensure platform-backend is running on the same Docker network " +
-    "(on the server: docker compose ps && docker compose logs platform-backend --tail 40)."
-  );
+function platformReachabilityError(): string {
+  const api = platformApiBaseUrl();
+  const inDocker = process.env.RUNNING_IN_DOCKER === "1";
+  if (inDocker) {
+    return (
+      `Cannot reach the platform API at ${api}. ` +
+      "Ensure platform-backend is running on the same Docker network " +
+      "(on the server: docker compose ps && docker compose logs platform-backend --tail 40)."
+    );
+  }
+  return `Cannot reach the platform API at ${api}. Start platform-backend locally (port 8002) or set SUBSCRIPTIONS_API_URL.`;
 }
 
 export type LoginState = { error?: string };
@@ -33,15 +33,17 @@ export async function loginWithPassword(
     return { error: "Enter username and password." };
   }
 
+  const api = platformApiBaseUrl();
   let loginRes: Response;
   try {
-    loginRes = await fetch(`${API}/v1/auth/login`, {
+    loginRes = await fetch(`${api}/v1/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
+      signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    return { error: apiUnreachableMessage() };
+    return { error: platformReachabilityError() };
   }
 
   if (!loginRes.ok) {
@@ -53,9 +55,9 @@ export async function loginWithPassword(
     if (loginRes.status === 401) {
       const isLocal =
         process.env.NODE_ENV === "development" ||
-        API.includes("127.0.0.1") ||
-        API.includes("localhost") ||
-        API.includes("0.0.0.0");
+        api.includes("127.0.0.1") ||
+        api.includes("localhost") ||
+        api.includes("0.0.0.0");
       return {
         error: isLocal
           ? "Invalid username or password. Local demo: username admin, password admin (lowercase, no spaces)."
@@ -117,13 +119,14 @@ export async function signupWithProfile(
 
   let res: Response;
   try {
-    res = await fetch(`${API}/v1/auth/signup`, {
+    res = await fetch(`${platformApiBaseUrl()}/v1/auth/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    return { error: apiUnreachableMessage() };
+    return { error: platformReachabilityError() };
   }
 
   if (!res.ok) {
@@ -193,7 +196,7 @@ export async function updateProfile(
 
   let res: Response;
   try {
-    res = await fetch(`${API}/v1/users/me/profile`, {
+    res = await fetch(`${platformApiBaseUrl()}/v1/users/me/profile`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${session.accessToken}`,
@@ -201,9 +204,10 @@ export async function updateProfile(
       },
       body: JSON.stringify(payload),
       cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
     });
   } catch {
-    return { error: apiUnreachableMessage() };
+    return { error: platformReachabilityError() };
   }
 
   if (res.status === 401 || res.status === 403) {
