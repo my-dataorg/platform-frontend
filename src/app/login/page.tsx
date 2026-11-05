@@ -10,16 +10,20 @@ export default async function LoginPage({
 }) {
   const { callbackUrl } = await searchParams;
   const nextPath = safeNextPath(callbackUrl);
-  const session = await auth();
 
-  if (session?.accessToken) {
-    const valid = await validatePlatformSession(session.accessToken);
-    if (valid) {
-      redirect(nextPath);
+  try {
+    const session = await auth();
+    if (session?.accessToken) {
+      const valid = await validatePlatformSession(session.accessToken);
+      if (valid) {
+        redirect(nextPath);
+      }
+      await signOut({ redirect: false });
+    } else if (session?.user) {
+      await signOut({ redirect: false });
     }
-    await signOut({ redirect: false });
-  } else if (session?.user) {
-    await signOut({ redirect: false });
+  } catch {
+    // Stale session cookie or auth misconfig — still show the login form.
   }
 
   return (
