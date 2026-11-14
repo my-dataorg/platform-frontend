@@ -121,10 +121,6 @@ button:not(:disabled) {
     opacity var(--motion-fast) var(--motion-ease);
 }
 
-button:not(:disabled):active {
-  transform: scale(0.98);
-}
-
 .motion-card {
   transition:
     transform var(--motion-fast) var(--motion-ease),
@@ -133,7 +129,6 @@ button:not(:disabled):active {
 }
 
 .motion-card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.06);
 }
 
@@ -164,19 +159,6 @@ button:not(:disabled):active {
 
 [data-radix-popper-content-wrapper] {
   animation: motion-pop-in 200ms var(--motion-ease);
-}
-
-::view-transition-old(root) {
-  animation: 280ms ease both motion-fade-out;
-}
-
-::view-transition-new(root) {
-  animation: var(--motion-page) var(--motion-ease) both motion-fade-in;
-}
-
-::view-transition-group(*) {
-  animation-duration: var(--motion-expand);
-  animation-timing-function: var(--motion-ease);
 }
 
 @keyframes motion-stage-in {
@@ -251,9 +233,4 @@ button:not(:disabled):active {
     scroll-behavior: auto !important;
   }
 
-  ::view-transition-old(root),
-  ::view-transition-new(root),
-  ::view-transition-group(*) {
-    animation: none !important;
-  }
 }

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { productIcon } from "@/lib/product-icons";
 import type { Product } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,7 @@ type Props = {
   product: Product;
   onAction?: () => void;
   onLaunch?: () => void;
+  href?: string;
   onEdit?: () => void;
   admin?: boolean;
   actionLabel?: string;
@@ -16,13 +17,17 @@ type Props = {
   transitionName?: string;
 };
 
-export function ProductCard({ product, onAction, onLaunch, onEdit, admin, actionLabel, disabled, transitionName }: Props) {
+export function ProductCard({ product, onAction, onLaunch, href, onEdit, admin, actionLabel, disabled, transitionName }: Props) {
   // Product icons are selected from a fixed registry by slug.
   const Icon = productIcon(product.slug);
   const label = actionLabel ?? (product.subscribed ? "Launch" : "Subscribe");
 
+  const Tag = href ? "a" : "article";
+
   return (
-    <article
+    <Tag
+      href={href}
+      onClick={href ? onLaunch : undefined}
       className="motion-card group flex min-w-0 max-w-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm hover:border-primary/30"
       style={transitionName ? { viewTransitionName: transitionName } : undefined}
     >
@@ -43,7 +48,9 @@ export function ProductCard({ product, onAction, onLaunch, onEdit, admin, action
             Edit product
           </Button>
         ) : product.subscribed ? (
-          onLaunch ? (
+          href ? (
+            <span className={cn(buttonVariants(), "w-full")}>{label}</span>
+          ) : onLaunch ? (
             <Button className="w-full" onClick={onLaunch}>
               {label}
             </Button>
@@ -58,7 +65,7 @@ export function ProductCard({ product, onAction, onLaunch, onEdit, admin, action
           </Button>
         )}
       </div>
-    </article>
+    </Tag>
   );
 }
 

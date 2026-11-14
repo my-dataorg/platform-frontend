@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { LayoutGrid, Store } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { ProductEmbedPane } from "@/components/product-embed-pane";
@@ -96,17 +96,17 @@ function DashboardShellInner({
     return () => window.clearTimeout(timer);
   }, []);
 
-  const launchProduct = useCallback(
-    (product: Product) => {
-      setRecentSlugs((current) => {
-        const next = [product.slug, ...current.filter((slug) => slug !== product.slug)].slice(0, 10);
-        window.localStorage.setItem("mydata:recent-apps", JSON.stringify(next));
-        return next;
-      });
-      router.push(dashboardAppUrl(product.slug, product.defaultPath));
-    },
-    [router]
-  );
+  function rememberApp(slug: string) {
+    try {
+      const stored = window.localStorage.getItem("mydata:recent-apps");
+      const current = stored ? (JSON.parse(stored) as string[]) : [];
+      const next = [slug, ...current.filter((item) => item !== slug)].slice(0, 10);
+      window.localStorage.setItem("mydata:recent-apps", JSON.stringify(next));
+      setRecentSlugs(next);
+    } catch {
+      // Opening the app must still happen if storage is blocked.
+    }
+  }
 
   return (
     <div
@@ -166,7 +166,8 @@ function DashboardShellInner({
                           icon={<Icon className="h-6 w-6" />}
                           title={p.name}
                           description={p.shortDescription}
-                          onClick={() => launchProduct(p)}
+                          href={dashboardAppUrl(p.slug, p.defaultPath)}
+                          onClick={() => rememberApp(p.slug)}
                         />
                       );
                     })}
@@ -177,7 +178,12 @@ function DashboardShellInner({
               <h2 className="mb-4 mt-10 font-serif text-xl font-semibold">My apps</h2>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {subscribed.map((p) => (
-                  <ProductCard key={p.slug} product={p} onLaunch={() => launchProduct(p)} />
+                  <ProductCard
+                    key={p.slug}
+                    product={p}
+                    href={dashboardAppUrl(p.slug, p.defaultPath)}
+                    onLaunch={() => rememberApp(p.slug)}
+                  />
                 ))}
               </div>
             </div>

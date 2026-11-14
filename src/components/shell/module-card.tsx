@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function ModuleCard({
@@ -38,9 +37,9 @@ export function ModuleCard({
 
   if (href) {
     return (
-      <Link href={href} className={classes} style={style}>
+      <a href={href} onClick={onClick} className={classes} style={style}>
         {inner}
-      </Link>
+      </a>
     );
   }
 
