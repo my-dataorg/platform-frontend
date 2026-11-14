@@ -8,6 +8,7 @@ export function ModuleCard({
   href,
   onClick,
   className,
+  transitionName,
 }: {
   icon: React.ReactNode;
   title: string;
@@ -15,6 +16,7 @@ export function ModuleCard({
   href?: string;
   onClick?: () => void;
   className?: string;
+  transitionName?: string;
 }) {
   const inner = (
     <>
@@ -29,20 +31,21 @@ export function ModuleCard({
   );
 
   const classes = cn(
-    "block min-w-0 max-w-full rounded-xl border border-border bg-card p-6 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md",
+    "motion-card block min-w-0 max-w-full rounded-xl border border-border bg-card p-6 shadow-sm hover:border-primary/25",
     className
   );
+  const style = transitionName ? { viewTransitionName: transitionName } : undefined;
 
   if (href) {
     return (
-      <Link href={href} className={classes}>
+      <Link href={href} className={classes} style={style}>
         {inner}
       </Link>
     );
   }
 
   return (
-    <button type="button" onClick={onClick} className={cn(classes, "w-full text-left")}>
+    <button type="button" onClick={onClick} className={cn(classes, "w-full text-left")} style={style}>
       {inner}
     </button>
   );

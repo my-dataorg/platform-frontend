@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { LayoutGrid, Store } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { ProductEmbedPane } from "@/components/product-embed-pane";
@@ -13,6 +14,7 @@ import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dashboardAppUrl } from "@/lib/product-embed";
+import { runMotion } from "@/lib/motion";
 import { productIcon } from "@/lib/product-icons";
 import type { Product } from "@/lib/api";
 import type { BusinessJoinInboxItem } from "@/lib/business-join-inbox";
@@ -61,6 +63,11 @@ function DashboardShellInner({
   const appSlug = searchParams.get("app");
   const embedPath = searchParams.get("path") || "/";
   const [recentSlugs, setRecentSlugs] = useState<string[]>([]);
+  const [presentedSlug, setPresentedSlug] = useState<string | null>(appSlug);
+  const [morph, setMorph] = useState<{ slug: string; where: "card" | "quick" } | null>(null);
+  const presentedRef = useRef(presentedSlug);
+  const hold = useRef(false);
+  presentedRef.current = presentedSlug;
 
   const subscribed = products.filter((p) => p.subscribed);
   const recentProducts = recentSlugs
@@ -69,6 +76,19 @@ function DashboardShellInner({
     .slice(0, 3);
   const activeProduct =
     appSlug ? subscribed.find((p) => p.slug === appSlug && p.enabled) : null;
+  const shownProduct = presentedSlug
+    ? subscribed.find((p) => p.slug === presentedSlug && p.enabled) ?? null
+    : null;
+
+  useEffect(() => {
+    const next = appSlug;
+    if (hold.current) {
+      if (next === presentedRef.current) hold.current = false;
+      return;
+    }
+    if (next === presentedRef.current) return;
+    runMotion(() => setPresentedSlug(next));
+  }, [appSlug]);
 
   useEffect(() => {
     if (!appSlug || activeProduct) return;
@@ -97,21 +117,32 @@ function DashboardShellInner({
   }, []);
 
   const launchProduct = useCallback(
-    (product: Product) => {
+    (product: Product, where: "card" | "quick") => {
       setRecentSlugs((current) => {
         const next = [product.slug, ...current.filter((slug) => slug !== product.slug)].slice(0, 10);
         window.localStorage.setItem("mydata:recent-apps", JSON.stringify(next));
         return next;
       });
+      hold.current = true;
+      flushSync(() => setMorph({ slug: product.slug, where }));
+      runMotion(() => setPresentedSlug(product.slug));
       router.push(dashboardAppUrl(product.slug, product.defaultPath));
     },
     [router]
   );
 
+  function closeWorkspace() {
+    if (!presentedSlug) return;
+    hold.current = true;
+    flushSync(() => setMorph({ slug: presentedSlug, where: "card" }));
+    runMotion(() => setPresentedSlug(null));
+    router.push("/dashboard");
+  }
+
   return (
     <div
       className={
-        activeProduct
+        shownProduct
           ? "h-screen w-full max-w-full overflow-hidden"
           : "min-h-screen w-full max-w-full overflow-x-hidden bg-background"
       }
@@ -122,15 +153,17 @@ function DashboardShellInner({
         businessJoinInbox={businessJoinInbox}
         showSearch={false}
         activeApp={
-          activeProduct ? { slug: activeProduct.slug, name: activeProduct.name } : undefined
+          shownProduct ? { slug: shownProduct.slug, name: shownProduct.name } : undefined
         }
+        onHome={shownProduct ? closeWorkspace : undefined}
       />
-      {activeProduct ? (
+      {shownProduct ? (
         <ProductEmbedPane
-          product={activeProduct}
+          product={shownProduct}
           path={embedPath}
+          transitionName={`app-${shownProduct.slug}`}
         />
-      ) : appSlug ? (
+      ) : appSlug && !shownProduct ? (
         <main className="mx-auto max-w-lg px-6 py-16 text-center">
           <p className="text-sm text-muted-foreground">Checking access…</p>
           <Button asChild variant="outline" className="mt-6">
@@ -138,7 +171,7 @@ function DashboardShellInner({
           </Button>
         </main>
       ) : (
-        <main className="mx-auto w-full min-w-0 max-w-7xl flex-1 overflow-x-hidden px-3 py-6 sm:px-6 sm:py-10">
+        <main key="dashboard" className="motion-stage mx-auto w-full min-w-0 max-w-7xl flex-1 overflow-x-hidden px-3 py-6 sm:px-6 sm:py-10">
           <PageHeader
             title={`${greeting}, ${firstName}`}
             subtitle="Overview of your subscribed apps and quick access to the marketplace."
@@ -169,7 +202,10 @@ function DashboardShellInner({
                           icon={<Icon className="h-6 w-6" />}
                           title={p.name}
                           description={p.shortDescription}
-                          onClick={() => launchProduct(p)}
+                          onClick={() => launchProduct(p, "quick")}
+                          transitionName={
+                            morph?.slug === p.slug && morph.where === "quick" ? `app-${p.slug}` : undefined
+                          }
                         />
                       );
                     })}
@@ -180,7 +216,14 @@ function DashboardShellInner({
               <h2 className="mb-4 mt-10 font-serif text-xl font-semibold">My apps</h2>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {subscribed.map((p) => (
-                  <ProductCard key={p.slug} product={p} onLaunch={() => launchProduct(p)} />
+                  <ProductCard
+                    key={p.slug}
+                    product={p}
+                    onLaunch={() => launchProduct(p, "card")}
+                    transitionName={
+                      morph?.slug === p.slug && morph.where === "card" ? `app-${p.slug}` : undefined
+                    }
+                  />
                 ))}
               </div>
             </div>

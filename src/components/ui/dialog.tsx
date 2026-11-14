@@ -69,7 +69,7 @@ export function Dialog({ open, title, description, onClose, children }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8"
+      className="motion-backdrop fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/40 p-4 sm:p-8"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
@@ -77,7 +77,7 @@ export function Dialog({ open, title, description, onClose, children }: Props) {
     >
       <section
         ref={dialogRef}
-        className="my-auto max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-xl"
+        className="motion-dialog my-auto max-h-[calc(100vh-2rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card p-6 shadow-xl"
         role="dialog"
         aria-modal="true"
         tabIndex={-1}

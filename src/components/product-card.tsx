@@ -13,15 +13,19 @@ type Props = {
   admin?: boolean;
   actionLabel?: string;
   disabled?: boolean;
+  transitionName?: string;
 };
 
-export function ProductCard({ product, onAction, onLaunch, onEdit, admin, actionLabel, disabled }: Props) {
+export function ProductCard({ product, onAction, onLaunch, onEdit, admin, actionLabel, disabled, transitionName }: Props) {
   // Product icons are selected from a fixed registry by slug.
   const Icon = productIcon(product.slug);
   const label = actionLabel ?? (product.subscribed ? "Launch" : "Subscribe");
 
   return (
-    <article className="group flex min-w-0 max-w-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md">
+    <article
+      className="motion-card group flex min-w-0 max-w-full flex-col rounded-xl border border-border bg-card p-5 shadow-sm hover:border-primary/30"
+      style={transitionName ? { viewTransitionName: transitionName } : undefined}
+    >
       <div className="mb-4 flex items-start justify-between">
         <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-shell text-shell-foreground transition">
           {/* eslint-disable-next-line react-hooks/static-components */}

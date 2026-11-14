@@ -9,9 +9,11 @@ const SHELL_HEADER_PX = 64;
 export function ProductEmbedPane({
   product,
   path = "/",
+  transitionName,
 }: {
   product: Product;
   path?: string;
+  transitionName?: string;
 }) {
   const safePath = safeProductPath(path);
   const handoffKey = `${product.slug}:${safePath}`;
@@ -102,7 +104,10 @@ export function ProductEmbedPane({
   }
 
   return (
-    <div className="relative w-full max-w-full overflow-x-hidden bg-background" style={{ height: `${height}px` }}>
+    <div
+      className="motion-workspace relative w-full max-w-full overflow-x-hidden bg-background"
+      style={{ height: `${height}px`, viewTransitionName: transitionName }}
+    >
       {handoffFailed && (
         <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-background px-6 text-center">
           <p className="text-sm text-muted-foreground">

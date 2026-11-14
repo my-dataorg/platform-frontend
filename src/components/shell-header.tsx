@@ -22,6 +22,7 @@ type Props = {
     slug: string;
     name: string;
   };
+  onHome?: () => void;
   showSearch?: boolean;
 };
 
@@ -30,6 +31,7 @@ export function ShellHeader({
   invites,
   businessJoinInbox = [],
   activeApp,
+  onHome,
   showSearch = true,
 }: Props) {
   const [context, setContext] = useState<{
@@ -74,14 +76,26 @@ export function ShellHeader({
     <header className="sticky top-0 z-40 w-full max-w-full overflow-x-hidden bg-shell text-shell-foreground shadow-md">
       <div className="flex h-12 min-h-12 w-full max-w-full items-center gap-1 px-2 sm:h-16 sm:gap-4 sm:px-6">
         <div className="flex min-w-0 shrink-0 items-center gap-1 sm:gap-3">
-          <Link
-            href="/dashboard"
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/10 text-shell-foreground hover:bg-white/15 sm:h-9 sm:w-9 sm:rounded-lg"
-            aria-label="MyData home"
-            title="MyData"
-          >
-            <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Link>
+          {onHome ? (
+            <button
+              type="button"
+              onClick={onHome}
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/10 text-shell-foreground hover:bg-white/15 sm:h-9 sm:w-9 sm:rounded-lg"
+              aria-label="MyData home"
+              title="MyData"
+            >
+              <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" />
+            </button>
+          ) : (
+            <Link
+              href="/dashboard"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-white/10 text-shell-foreground hover:bg-white/15 sm:h-9 sm:w-9 sm:rounded-lg"
+              aria-label="MyData home"
+              title="MyData"
+            >
+              <LayoutGrid className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Link>
+          )}
           {activeApp && AppIcon && (
             <Link
               href={dashboardAppUrl(activeApp.slug, productHomePath(activeApp.slug))}
